@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-electron/
+release/
+coverage/
+*.log
+*.db
+*.db-shm
+*.db-wal
+.tmp-check/
+.DS_Store
+.vite/

@@ -1,0 +1,67 @@
+import { spawn } from 'node:child_process';
+import process from 'node:process';
+import electronPath from 'electron';
+import { createServer } from 'vite';
+
+import { fileURLToPath } from 'node:url';
+
+const viteCli = fileURLToPath(
+  new URL('../node_modules/vite/bin/vite.js', import.meta.url)
+);
+
+function buildElectron(configFile) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [viteCli, 'build', '--config', configFile], {
+  stdio: 'inherit',
+});
+    child.on('error', reject);
+    child.on('exit', (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`vite build failed for ${configFile} (exit code ${code})`));
+      }
+    });
+  });
+}
+
+async function main() {
+  await buildElectron('vite.electron.main.config.ts');
+  await buildElectron('vite.electron.preload.config.ts');
+
+  const server = await createServer({ configFile: 'vite.config.ts' });
+  await server.listen();
+  server.printUrls();
+
+  const devServerUrl = server.resolvedUrls?.local?.[0];
+  if (!devServerUrl) {
+    throw new Error('Vite dev server did not report a local URL.');
+  }
+
+  const electronProcess = spawn(electronPath, ['.'], {
+    stdio: 'inherit',
+    env: {
+      ...process.env,
+      NODE_ENV: 'development',
+      VITE_DEV_SERVER_URL: devServerUrl,
+    },
+  });
+
+  const shutdown = async (code) => {
+    await server.close();
+    process.exit(code ?? 0);
+  };
+
+  electronProcess.on('exit', (code) => {
+    void shutdown(code);
+  });
+  process.on('SIGINT', () => {
+    electronProcess.kill();
+    void shutdown(0);
+  });
+}
+
+main().catch((error) => {
+  console.error('[condeck] dev runner failed:', error);
+  process.exit(1);
+});
