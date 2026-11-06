@@ -1,32 +1,35 @@
 import { randomUUID } from 'node:crypto';
-import { and, eq, ne } from 'drizzle-orm';
+import { and, asc, eq, ne } from 'drizzle-orm';
 import {
   AppError,
   DEFAULT_BUTTON_BACKGROUND,
   DEFAULT_BUTTON_TEXT_COLOR,
+  type ActionRecord,
   type CreateButtonInput,
-  type DeckButton,
+  type DeckButtonWithAction,
   type DuplicateButtonInput,
   type UpdateButtonInput,
 } from '@condeck/shared';
 import type { ConDeckDb } from '../client';
-import { buttons } from '../schema';
+import { actions, buttons } from '../schema';
+import { getButtonAction } from './actions';
 import { assertPositionInGrid, getPageGrid } from './grid';
 
 type ButtonRow = typeof buttons.$inferSelect;
 
-function toButton(row: ButtonRow): DeckButton {
+function toButton(row: ButtonRow, action: ActionRecord | null): DeckButtonWithAction {
   return {
     id: row.id,
     pageId: row.pageId,
     position: row.position,
     label: row.label,
-    icon: (row.icon ?? null) as DeckButton['icon'],
+    icon: (row.icon ?? null) as DeckButtonWithAction['icon'],
     backgroundColor: row.backgroundColor,
     textColor: row.textColor,
     isEnabled: row.isEnabled,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    action,
   };
 }
 
@@ -55,7 +58,7 @@ function requireButton(db: ConDeckDb, buttonId: string): ButtonRow {
   return row;
 }
 
-export function createButton(db: ConDeckDb, input: CreateButtonInput): DeckButton {
+export function createButton(db: ConDeckDb, input: CreateButtonInput): DeckButtonWithAction {
   const grid = getPageGrid(db, input.pageId);
   assertPositionInGrid(input.position, grid);
   assertSlotFree(db, input.pageId, input.position);
@@ -78,7 +81,7 @@ export function createButton(db: ConDeckDb, input: CreateButtonInput): DeckButto
   if (!row) {
     throw new AppError('DATABASE_ERROR', 'Button could not be created.');
   }
-  return toButton(row);
+  return toButton(row, null);
 }
 
 /**
@@ -86,7 +89,7 @@ export function createButton(db: ConDeckDb, input: CreateButtonInput): DeckButto
  * The move is a single UPDATE, so the row can never be left in an invalid slot;
  * the unique index on (page_id, position) is the final guard.
  */
-export function updateButton(db: ConDeckDb, input: UpdateButtonInput): DeckButton {
+export function updateButton(db: ConDeckDb, input: UpdateButtonInput): DeckButtonWithAction {
   const current = requireButton(db, input.buttonId);
 
   if (input.position !== undefined && input.position !== current.position) {
@@ -113,7 +116,7 @@ export function updateButton(db: ConDeckDb, input: UpdateButtonInput): DeckButto
   if (!updated) {
     throw new AppError('DATABASE_ERROR', 'Button could not be updated.');
   }
-  return toButton(updated);
+  return toButton(updated, getButtonAction(db, updated.id));
 }
 
 export function deleteButton(db: ConDeckDb, buttonId: string): void {
@@ -123,30 +126,57 @@ export function deleteButton(db: ConDeckDb, buttonId: string): void {
   }
 }
 
-/** Copies a button's configuration into another free slot of the same page. */
-export function duplicateButton(db: ConDeckDb, input: DuplicateButtonInput): DeckButton {
+/** Copies a button and its configured action into another free slot of the page. */
+export function duplicateButton(
+  db: ConDeckDb,
+  input: DuplicateButtonInput,
+): DeckButtonWithAction {
   const source = requireButton(db, input.buttonId);
   const grid = getPageGrid(db, source.pageId);
   assertPositionInGrid(input.position, grid);
   assertSlotFree(db, source.pageId, input.position);
 
-  const row = db
-    .insert(buttons)
-    .values({
-      id: randomUUID(),
-      pageId: source.pageId,
-      position: input.position,
-      label: source.label,
-      icon: source.icon,
-      backgroundColor: source.backgroundColor,
-      textColor: source.textColor,
-      isEnabled: source.isEnabled,
-    })
-    .returning()
-    .get();
+  const row = db.transaction((tx) => {
+    const copy = tx
+      .insert(buttons)
+      .values({
+        id: randomUUID(),
+        pageId: source.pageId,
+        position: input.position,
+        label: source.label,
+        icon: source.icon,
+        backgroundColor: source.backgroundColor,
+        textColor: source.textColor,
+        isEnabled: source.isEnabled,
+      })
+      .returning()
+      .get();
 
-  if (!row) {
-    throw new AppError('DATABASE_ERROR', 'Button could not be duplicated.');
-  }
-  return toButton(row);
+    if (!copy) {
+      throw new AppError('DATABASE_ERROR', 'Button could not be duplicated.');
+    }
+
+    const sourceAction = tx
+      .select()
+      .from(actions)
+      .where(eq(actions.buttonId, source.id))
+      .orderBy(asc(actions.position))
+      .get();
+
+    if (sourceAction) {
+      tx.insert(actions)
+        .values({
+          id: randomUUID(),
+          buttonId: copy.id,
+          actionType: sourceAction.actionType,
+          configJson: sourceAction.configJson,
+          position: sourceAction.position,
+        })
+        .run();
+    }
+
+    return copy;
+  });
+
+  return toButton(row, getButtonAction(db, row.id));
 }
