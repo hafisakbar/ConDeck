@@ -1,0 +1,48 @@
+import type { NavigationDirection } from '@condeck/shared';
+
+/**
+ * Everything an action handler may know about the button that triggered it.
+ * The mobile remote (Phase 5) will provide the same context from a button id.
+ */
+export interface ActionContext {
+  buttonId: string;
+  buttonLabel: string;
+  pageId: string;
+  deckId: string;
+}
+
+/**
+ * OBS operations. Phase 4 supplies the obs-websocket-js implementation; until
+ * then the desktop port reports `OBS_DISCONNECTED` instead of pretending to
+ * work (see docs/DECISIONS.md ADR-014).
+ */
+export interface ObsPort {
+  isConnected(): boolean;
+  switchScene(sceneName: string): Promise<void>;
+  startStreaming(): Promise<void>;
+  stopStreaming(): Promise<void>;
+  startRecording(): Promise<void>;
+  stopRecording(): Promise<void>;
+  getInputMute(inputName: string): Promise<boolean>;
+  setInputMute(inputName: string, muted: boolean): Promise<void>;
+}
+
+/**
+ * Desktop OS operations. Both calls take a single, already validated value:
+ * there is no shell, no argument list and no free-form command.
+ */
+export interface SystemPort {
+  openApplication(applicationPath: string): Promise<void>;
+  openUrl(url: string): Promise<void>;
+}
+
+/** Page navigation is owned by the renderer, so the desktop port forwards it. */
+export interface NavigationPort {
+  navigate(direction: NavigationDirection, context: ActionContext): void | Promise<void>;
+}
+
+export interface ActionPorts {
+  obs: ObsPort;
+  system: SystemPort;
+  navigation: NavigationPort;
+}
