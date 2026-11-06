@@ -1,12 +1,1 @@
-{
-  "extends": "../../packages/config/tsconfig.base.json",
-  "compilerOptions": {
-    "types": ["node"],
-    "paths": {
-      "@condeck/shared": ["../../packages/shared/src/index.ts"],
-      "@condeck/database": ["../../packages/database/src/index.ts"]
-    }
-  },
-  "files": ["../../packages/database/src/types.d.ts"],
-  "include": ["electron/**/*.ts", "vite.config.ts", "vite.electron.main.config.ts", "vite.electron.preload.config.ts"]
-}
+...
