@@ -4,7 +4,8 @@
     "types": ["node"],
     "paths": {
       "@condeck/shared": ["../../packages/shared/src/index.ts"],
-      "@condeck/database": ["../../packages/database/src/index.ts"]
+      "@condeck/database": ["../../packages/database/src/index.ts"],
+      "@condeck/action-engine": ["../../packages/action-engine/src/index.ts"]
     }
   },
   "files": ["../../packages/database/src/types.d.ts"],

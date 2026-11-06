@@ -15,6 +15,7 @@
     "rebuild:native": "electron-rebuild -f -w better-sqlite3"
   },
   "dependencies": {
+    "@condeck/action-engine": "workspace:*",
     "@condeck/database": "workspace:*",
     "@condeck/shared": "workspace:*",
     "better-sqlite3": "^13.0.3",

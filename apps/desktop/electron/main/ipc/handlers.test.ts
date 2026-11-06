@@ -1,13 +1,20 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { ActionPorts } from '@condeck/action-engine';
 import { openDatabase, type ConDeckDatabase } from '@condeck/database';
 import {
+  actionTypes,
+  AppError,
   ipcChannels,
+  type ActionCatalogEntry,
+  type ActionExecutionResult,
   type AppInfo,
   type DeckButton,
+  type DeckButtonWithAction,
   type DeckDetail,
   type IpcResult,
+  type NavigationRequest,
   type Profile,
 } from '@condeck/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -28,6 +35,7 @@ vi.mock('electron', () => ({
 
 const { registerIpcHandlers } = await import('./handlers');
 const { FileLogger } = await import('../logger');
+const { createActionService } = await import('../services/action.service');
 
 const appInfo: AppInfo = {
   name: 'ConDeck',
@@ -41,15 +49,45 @@ const appInfo: AppInfo = {
 let workDir: string;
 let database: ConDeckDatabase;
 let invoke: (channel: string, payload?: unknown) => Promise<IpcResult<unknown>>;
+let navigationRequests: NavigationRequest[];
+let actionPorts: ActionPorts;
 
 beforeEach(() => {
   registeredHandlers.clear();
   workDir = mkdtempSync(join(tmpdir(), 'condeck-ipc-'));
   database = openDatabase({ filePath: join(workDir, 'condeck.db') });
+
+  navigationRequests = [];
+  const obsUnavailable = vi.fn(async () => {
+    throw new AppError('OBS_DISCONNECTED', 'OBS is not connected.');
+  });
+  actionPorts = {
+    obs: {
+      isConnected: () => false,
+      switchScene: obsUnavailable,
+      startStreaming: obsUnavailable,
+      stopStreaming: obsUnavailable,
+      startRecording: obsUnavailable,
+      stopRecording: obsUnavailable,
+      getInputMute: obsUnavailable,
+      setInputMute: obsUnavailable,
+    },
+    system: {
+      openApplication: vi.fn(async () => undefined),
+      openUrl: vi.fn(async () => undefined),
+    },
+    navigation: {
+      navigate: (direction, context) => {
+        navigationRequests.push({ direction, buttonId: context.buttonId });
+      },
+    },
+  };
+
   registerIpcHandlers({
     logger: new FileLogger(join(workDir, 'logs', 'condeck.log')),
     db: database.db,
     getAppInfo: () => appInfo,
+    actions: createActionService({ db: database.db, ports: actionPorts }),
   });
 
   invoke = (channel, payload) => {
@@ -222,6 +260,179 @@ describe('deck builder channels', () => {
     if (afterDelete.ok) {
       const updated = afterDelete.data as DeckDetail;
       expect(updated.pages.map((page) => [page.name, page.position])).toEqual([['Audio', 0]]);
+    }
+  });
+});
+
+describe('action engine channels', () => {
+  async function seedButton(): Promise<{ button: DeckButtonWithAction; deckId: string }> {
+    const profile = await invoke('profiles:create', { name: 'Streaming' });
+    if (!profile.ok) {
+      throw new Error('profile creation failed');
+    }
+
+    const created = await invoke('decks:create', {
+      profileId: (profile.data as Profile).id,
+      name: 'Main deck',
+      columns: 3,
+      rows: 3,
+    });
+    if (!created.ok) {
+      throw new Error('deck creation failed');
+    }
+    const detail = created.data as DeckDetail;
+    const pageId = detail.pages[0]?.id ?? '';
+
+    const button = await invoke('buttons:create', { pageId, position: 0, label: 'Mic mute' });
+    if (!button.ok) {
+      throw new Error('button creation failed');
+    }
+
+    return { button: button.data as DeckButtonWithAction, deckId: detail.deck.id };
+  }
+
+  it('exposes the full action catalog', async () => {
+    const result = await invoke('actions:catalog');
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const catalog = result.data as ActionCatalogEntry[];
+      expect(catalog.map((entry) => entry.type).sort()).toEqual([...actionTypes].sort());
+    }
+  });
+
+  it('saves an action and returns it with the deck detail', async () => {
+    const { button, deckId } = await seedButton();
+
+    const saved = await invoke('actions:set', {
+      buttonId: button.id,
+      actionType: 'OBS_TOGGLE_MUTE',
+      config: { inputName: 'Mic/Aux' },
+    });
+    expect(saved.ok).toBe(true);
+
+    const detail = await invoke('decks:get', { deckId });
+    expect(detail.ok).toBe(true);
+    if (detail.ok) {
+      const refreshed = detail.data as DeckDetail;
+      expect(refreshed.pages[0]?.buttons[0]?.action?.actionType).toBe('OBS_TOGGLE_MUTE');
+    }
+  });
+
+  it('rejects an action configuration that breaks the schema', async () => {
+    const { button } = await seedButton();
+
+    const result = await invoke('actions:set', {
+      buttonId: button.id,
+      actionType: 'SYSTEM_OPEN_URL',
+      config: { url: 'not-a-url' },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('INVALID_INPUT');
+    }
+  });
+
+  it('executes a navigation action and forwards the page change', async () => {
+    const { button } = await seedButton();
+    await invoke('actions:set', {
+      buttonId: button.id,
+      actionType: 'NAV_NEXT_PAGE',
+      config: {},
+    });
+
+    const result = await invoke('actions:execute', { buttonId: button.id });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const execution = result.data as ActionExecutionResult;
+      expect(execution.status).toBe('SUCCESS');
+      expect(execution.buttonId).toBe(button.id);
+    }
+    expect(navigationRequests).toEqual([{ direction: 'next', buttonId: button.id }]);
+  });
+
+  it('reports an OBS action as failed while OBS is not connected', async () => {
+    const { button } = await seedButton();
+    await invoke('actions:set', {
+      buttonId: button.id,
+      actionType: 'OBS_SWITCH_SCENE',
+      config: { sceneName: 'Starting soon' },
+    });
+
+    const result = await invoke('actions:execute', { buttonId: button.id });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const execution = result.data as ActionExecutionResult;
+      expect(execution.status).toBe('FAILED');
+      expect(execution.code).toBe('OBS_DISCONNECTED');
+      expect(execution.message).toContain('OBS');
+    }
+  });
+
+  it('refuses to execute a button without an action', async () => {
+    const { button } = await seedButton();
+
+    const result = await invoke('actions:execute', { buttonId: button.id });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('NOT_FOUND');
+    }
+  });
+
+  it('refuses to execute a disabled button', async () => {
+    const { button } = await seedButton();
+    await invoke('actions:set', {
+      buttonId: button.id,
+      actionType: 'NAV_NEXT_PAGE',
+      config: {},
+    });
+    await invoke('buttons:update', { buttonId: button.id, isEnabled: false });
+
+    const result = await invoke('actions:execute', { buttonId: button.id });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('INVALID_INPUT');
+    }
+    expect(navigationRequests).toEqual([]);
+  });
+
+  it('removes an action from a button', async () => {
+    const { button, deckId } = await seedButton();
+    await invoke('actions:set', {
+      buttonId: button.id,
+      actionType: 'NAV_PREV_PAGE',
+      config: {},
+    });
+
+    const removed = await invoke('actions:delete', { buttonId: button.id });
+    expect(removed.ok).toBe(true);
+
+    const detail = await invoke('decks:get', { deckId });
+    expect(detail.ok).toBe(true);
+    if (detail.ok) {
+      expect((detail.data as DeckDetail).pages[0]?.buttons[0]?.action).toBeNull();
+    }
+  });
+
+  it('logs action execution in the activity feed', async () => {
+    const { button } = await seedButton();
+    await invoke('actions:set', {
+      buttonId: button.id,
+      actionType: 'NAV_NEXT_PAGE',
+      config: {},
+    });
+    await invoke('actions:execute', { buttonId: button.id });
+
+    const result = await invoke('activity:list', { limit: 5 });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const logs = result.data as Array<{ eventType: string }>;
+      expect(logs.map((entry) => entry.eventType)).toContain('ACTION_EXECUTED');
     }
   });
 });

@@ -1,12 +1,16 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import {
   ipcChannels,
+  navigationRequestSchema,
+  type ActionCatalogEntry,
+  type ActionExecutionResult,
+  type ActionRecord,
   type ActivityLog,
   type AppInfo,
   type ConDeckBridge,
   type DashboardSummary,
   type Deck,
-  type DeckButton,
+  type DeckButtonWithAction,
   type DeckDetail,
   type DeckPage,
   type DeckSummary,
@@ -56,10 +60,29 @@ const bridge: ConDeckBridge = {
   updatePage: (input) => invoke<DeckPage>('pages:update', input),
   deletePage: (input) => invoke<DeckDetail>('pages:delete', input),
 
-  createButton: (input) => invoke<DeckButton>('buttons:create', input),
-  updateButton: (input) => invoke<DeckButton>('buttons:update', input),
+  createButton: (input) => invoke<DeckButtonWithAction>('buttons:create', input),
+  updateButton: (input) => invoke<DeckButtonWithAction>('buttons:update', input),
   deleteButton: (input) => invoke<DeletedRef>('buttons:delete', input),
-  duplicateButton: (input) => invoke<DeckButton>('buttons:duplicate', input),
+  duplicateButton: (input) => invoke<DeckButtonWithAction>('buttons:duplicate', input),
+
+  getActionCatalog: () => invoke<ActionCatalogEntry[]>('actions:catalog'),
+  setAction: (input) => invoke<ActionRecord>('actions:set', input),
+  deleteAction: (input) => invoke<DeletedRef>('actions:delete', input),
+  executeAction: (input) => invoke<ActionExecutionResult>('actions:execute', input),
+
+  onNavigationRequest(listener) {
+    const handler = (_event: IpcRendererEvent, payload: unknown): void => {
+      const parsed = navigationRequestSchema.safeParse(payload);
+      if (parsed.success) {
+        listener(parsed.data);
+      }
+    };
+
+    ipcRenderer.on('navigation:request', handler);
+    return () => {
+      ipcRenderer.removeListener('navigation:request', handler);
+    };
+  },
 
   listDevices: () => invoke<Device[]>('devices:list'),
   listActivity: (input) => invoke<ActivityLog[]>('activity:list', input ?? {}),
