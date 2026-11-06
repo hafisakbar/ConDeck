@@ -4,6 +4,8 @@ import type { AppInfo } from '@condeck/shared';
 import { app, BrowserWindow } from 'electron';
 import { registerIpcHandlers } from './ipc/handlers';
 import { FileLogger } from './logger';
+import { createActionPorts } from './services/action-ports';
+import { createActionService } from './services/action.service';
 import { closeDatabase, getDatabasePath, initDatabase } from './services/database.service';
 import { createMainWindow } from './window';
 
@@ -34,10 +36,19 @@ function bootstrap(): void {
 
   const database = initDatabase(activeLogger);
 
+  const actionPorts = createActionPorts({
+    sendNavigation: (request) => {
+      for (const window of BrowserWindow.getAllWindows()) {
+        window.webContents.send('navigation:request', request);
+      }
+    },
+  });
+
   registerIpcHandlers({
     logger: activeLogger,
     db: database.db,
     getAppInfo: buildAppInfo,
+    actions: createActionService({ db: database.db, ports: actionPorts }),
   });
 
   recordActivity(database.db, {

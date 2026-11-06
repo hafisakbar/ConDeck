@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { actionRecordSchema } from './actions';
 import { isoTimestampSchema } from './domain';
 
 /**
@@ -151,8 +152,14 @@ export const deckSummarySchema = deckSchema.extend({
 });
 export type DeckSummary = z.infer<typeof deckSummarySchema>;
 
+/** A button plus the action configured for it (Phase 3). */
+export const deckButtonWithActionSchema = deckButtonSchema.extend({
+  action: actionRecordSchema.nullable(),
+});
+export type DeckButtonWithAction = z.infer<typeof deckButtonWithActionSchema>;
+
 export const deckPageWithButtonsSchema = pageSchema.extend({
-  buttons: z.array(deckButtonSchema),
+  buttons: z.array(deckButtonWithActionSchema),
 });
 export type DeckPageWithButtons = z.infer<typeof deckPageWithButtonsSchema>;
 

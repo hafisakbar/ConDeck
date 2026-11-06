@@ -21,6 +21,14 @@ export {
 } from './repositories/decks';
 export { createPage, deletePage, updatePage } from './repositories/pages';
 export { createButton, deleteButton, duplicateButton, updateButton } from './repositories/buttons';
+export {
+  actionsByButtonIds,
+  deleteButtonAction,
+  getActionTarget,
+  getButtonAction,
+  setButtonAction,
+  type ActionTarget,
+} from './repositories/actions';
 export { assertPositionInGrid, getPageGrid, type PageGrid } from './repositories/grid';
 export { getIntegrationByProvider, type IntegrationRow } from './repositories/integrations';
 export { countDevices, listDevices } from './repositories/devices';

@@ -95,11 +95,42 @@ Button editor Phase 2 hanya menyimpan label, ikon, warna, status aktif, dan posi
 
 `pages:delete` menomori ulang halaman yang tersisa dalam dua fase (offset sementara lalu posisi final) agar unique index `(deck_id, position)` tidak dilanggar saat satu baris bergeser ke posisi baris lain.
 
+### ADR-014 — Action Engine sebagai package dengan port
+
+`packages/action-engine` berisi registry, executor dan antarmuka port (`ObsPort`, `SystemPort`, `NavigationPort`). Engine tidak meng-import Electron, database, maupun jaringan; efek samping selalu lewat port yang disuntikkan main process. Konsekuensi: handler action dapat diuji tanpa Electron, dan implementasi OBS di Phase 4 cukup mengganti `ObsPort`.
+
+Sebelum Phase 4, `ObsPort` selalu melaporkan `OBS_DISCONNECTED`. Action OBS tetap dapat dikonfigurasi dan divalidasi, tetapi eksekusinya gagal dengan pesan jelas — bukan sukses palsu (sesuai aturan "jangan membuat mock implementation").
+
+### ADR-015 — Satu action per tombol di Phase 3
+
+PRD §4.2 mencantumkan multi-action sebagai fitur lanjutan (roadmap v1.1). Karena itu `actions:set` mengganti action yang ada pada posisi 0, bukan menumpuk action baru. Tabel `actions` tetap menyimpan kolom `position` sehingga multi-action dapat ditambahkan tanpa migrasi.
+
+### ADR-016 — Eksekusi hanya lewat button id
+
+Renderer mengirim `{ buttonId }` ke `actions:execute`; konfigurasi action dibaca dari database dan diparse ulang di engine sebelum handler dipanggil. Tidak ada jalur untuk mengirim action type, konfigurasi, atau perintah bebas dari renderer — dan nanti dari mobile (Phase 5). Ini memenuhi acceptance criteria "action hanya berjalan melalui registry" dan "tidak ada arbitrary command execution dari Mobile".
+
+Action System memakai `shell.openPath`/`shell.openExternal` tanpa shell. Input dibatasi: path absolut saja (tanpa argumen tambahan) dan URL `http`/`https` saja.
+
+### ADR-017 — Hasil eksekusi adalah data, bukan error IPC
+
+Kegagalan saat menjalankan action (OBS terputus, timeout, error OS) dikembalikan sebagai `ActionExecutionResult` dengan `status: FAILED` dan `code` stabil, sehingga tombol selalu punya feedback. Envelope IPC `ok: false` hanya dipakai untuk request yang tidak valid: tombol tidak ditemukan, tombol dinonaktifkan, atau payload tidak lolos schema.
+
+Executor menerapkan dua aturan PRD §5.4: satu eksekusi berjalan per tombol (`ACTION_BUSY`) dan batas waktu 10 detik (`ACTION_TIMEOUT`).
+
+### ADR-018 — Navigasi halaman lewat event main → renderer
+
+Halaman aktif dimiliki renderer, sehingga action `NAV_NEXT_PAGE`/`NAV_PREV_PAGE` dikirim balik sebagai event `navigation:request`. Preload memvalidasi payload dengan Zod dan hanya mengekspos fungsi berlangganan (tidak ada `ipcRenderer` mentah). Halaman terakhir/kembali ke halaman pertama (wrap around) dan event hanya memengaruhi deck yang sedang dibuka.
+
+### ADR-019 — Aktivitas action ikut dicatat
+
+`actions:set`, `actions:delete`, dan `actions:execute` menulis activity log (`ACTION_CONFIGURED`, `ACTION_REMOVED`, `ACTION_EXECUTED`, `ACTION_FAILED`). Log memuat button id, action type, status dan durasi, tanpa konfigurasi sensitif, sehingga halaman Activity Logs langsung berguna untuk menelusuri action yang gagal.
+
 ---
 
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
 
-1. Binding native Electron belum diverifikasi di lingkungan build saat ini (Linux tanpa GUI, target Windows).
-2. Integrasi OBS, action engine, remote server, dan QR pairing belum diimplementasikan (Phase 3–5).
-3. Konfigurasi action pada tombol, drag & drop, dan custom image belum ada (Phase 3 dan v1.1 PRD §4.2).
-4. Belum ada electron-builder config/installer (Phase 6).
+1. Binding native Electron belum diverifikasi di lingkungan build saat ini (Linux tanpa GUI, target Windows). Aplikasi Electron belum dijalankan dan dilihat secara visual.
+2. Klien OBS WebSocket (Phase 4), remote server, device authentication, dan QR pairing (Phase 5) belum diimplementasikan. Selama itu action OBS selalu gagal dengan `OBS_DISCONNECTED`.
+3. Multi-action per tombol, drag & drop, custom image, soundboard dan macro belum ada (roadmap v1.1).
+4. Action yang melewati batas waktu tidak dapat dibatalkan: hasilnya dilaporkan `ACTION_TIMEOUT`, tetapi promise handler yang mendasari tetap berjalan sampai selesai. Pembatalan sungguhan perlu AbortSignal saat port OBS dibuat di Phase 4.
+5. Belum ada electron-builder config/installer (Phase 6).

@@ -12,23 +12,26 @@ Pengembangan mengikuti `DEVELOPMENT_ROADMAP.md`, satu phase per iterasi.
 |---|---|---|
 | 1 — Foundation | Monorepo, Electron, React, Tailwind, SQLite + Drizzle, preload aman, IPC, dashboard, navigasi | ✅ Selesai |
 | 2 — Deck Builder | Deck, page, button grid, button editor, icon & colour customization, profile edit/delete | ✅ Selesai |
-| 3 — Action Engine | Action registry, validasi, eksekusi, feedback | ⏳ Belum |
+| 3 — Action Engine | Action registry, validasi, eksekusi, feedback | ✅ Selesai (OBS menunggu Phase 4) |
 | 4 — OBS Integration | OBS WebSocket v5, scene/stream/record/audio | ⏳ Belum |
 | 5 — Mobile Remote | PWA, WebSocket server, QR pairing, device auth | ⏳ Belum |
 | 6 — Testing & Release | E2E, security, installer Windows | ⏳ Belum |
 
 Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit, bukan data palsu.
 
-### Yang sudah bisa dilakukan (Phase 1 + 2)
+### Yang sudah bisa dilakukan (Phase 1 + 2 + 3)
 
 - Membuat, mengganti nama, mengubah ukuran grid, dan menghapus deck. Default 3 × 3, dengan preset 4 × 4, 5 × 3, 5 × 5 dan ukuran custom 1–8 baris/kolom.
 - Menambah, mengganti nama, dan menghapus halaman. Posisi halaman otomatis dirapikan setelah penghapusan.
 - Menambah tombol di slot kosong, lalu mengubah label, ikon, warna latar, warna teks, dan status aktifnya.
 - Memindahkan tombol ke slot lain, dan menggandakan tombol ke slot kosong berikutnya.
 - Mengedit dan menghapus profil; deck, halaman, dan tombol di dalamnya ikut terhapus.
+- Menyimpan satu action per tombol dari Action Registry: 7 action OBS, 2 action System (buka aplikasi, buka URL) dan 2 action Navigation (halaman berikutnya/sebelumnya).
+- Konfigurasi action divalidasi dengan schema khusus per jenis action sebelum ditulis ke database; konfigurasi tidak valid ditolak dengan pesan yang jelas.
+- Menjalankan action dari grid editor lewat tombol play: status berjalan, hasil sukses, dan pesan gagal tampil langsung di tombol dan panel properti.
+- Action hanya dieksekusi berdasarkan tombol (button id) melalui registry; renderer tidak pernah mengirim perintah bebas dan tidak ada eksekusi shell.
+- Action Navigation mengubah halaman deck aktif di desktop; action System membuka aplikasi/URL dengan handler default OS; action OBS tervalidasi tetapi melaporkan `OBS_DISCONNECTED` sampai integrasi OBS (Phase 4).
 - Semua perubahan langsung tersimpan ke SQLite dan tetap ada setelah aplikasi ditutup.
-
-Konfigurasi action pada tombol belum tersedia karena itu bagian dari Action Engine (Phase 3); tombol saat ini menyimpan tampilannya saja.
 
 ## Prasyarat
 
@@ -68,7 +71,7 @@ condeck/
 │   │   ├── main/          # lifecycle, window, IPC, services (database, dashboard)
 │   │   └── preload/       # contextBridge — satu-satunya jembatan ke renderer
 │   ├── src/
-│   │   ├── components/    # layout, ui, activity, dashboard, profiles
+│   │   ├── components/    # layout, ui, activity, dashboard, profiles, deck
 │   │   ├── pages/         # 7 halaman sesuai PRD §7.2
 │   │   ├── stores/        # Zustand
 │   │   └── lib/           # bridge, format, navigasi
@@ -76,6 +79,7 @@ condeck/
 ├── packages/
 │   ├── config/            # tsconfig base
 │   ├── shared/            # tipe + schema Zod + kontrak IPC
+│   ├── action-engine/     # registry, port, executor action
 │   └── database/          # schema Drizzle, migrasi, repository
 ├── docs/                  # catatan keputusan arsitektur
 └── pnpm-workspace.yaml
@@ -86,6 +90,8 @@ condeck/
 - `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`, `webSecurity: true`.
 - Renderer tidak memiliki akses Node.js maupun SQLite; semua data lewat IPC.
 - IPC memakai allowlist channel (`packages/shared/src/ipc.ts`) dan validasi Zod di main process.
+- Action hanya berjalan lewat registry (`packages/action-engine`); konfigurasi diparse ulang sebelum eksekusi, satu eksekusi per tombol, dan timeout 10 detik.
+- Action System memakai `shell.openPath`/`shell.openExternal` tanpa shell, hanya menerima path absolut dan URL http(s).
 - Navigasi dan `window.open` dibatasi; `webview` diblokir.
 - CSP ketat disuntikkan ke HTML hasil build (dev server dikecualikan karena kebutuhan HMR).
 - Logger meredaksi field `password`, `secret`, `token`, `credential`, `hash`.

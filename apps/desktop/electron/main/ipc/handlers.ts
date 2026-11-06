@@ -9,6 +9,7 @@ import {
   deletePage,
   deleteProfile,
   duplicateButton,
+  getActionTarget,
   getDeck,
   getDeckDetail,
   listDecks,
@@ -25,10 +26,14 @@ import {
 } from '@condeck/database';
 import {
   AppError,
+  actionTypeLabel,
   ipcFailure,
   ipcInputSchemas,
   ipcSuccess,
   type ActivityLog,
+  type ActionCatalogEntry,
+  type ActionExecutionResult,
+  type ActionRecord,
   type AppInfo,
   type CreateButtonInput,
   type CreateDeckInput,
@@ -36,10 +41,11 @@ import {
   type CreateProfileInput,
   type DashboardSummary,
   type Deck,
-  type DeckButton,
+  type DeckButtonWithAction,
   type DeckDetail,
   type DeckPage,
   type DeckSummary,
+  type DeleteActionInput,
   type DeleteButtonInput,
   type DeleteDeckInput,
   type DeletePageInput,
@@ -48,6 +54,7 @@ import {
   type Device,
   type DuplicateButtonInput,
   type ErrorCode,
+  type ExecuteActionInput,
   type GetDeckInput,
   type IpcChannel,
   type IpcErrorCode,
@@ -55,6 +62,7 @@ import {
   type ListActivityInput,
   type ListDecksInput,
   type Profile,
+  type SetActionInput,
   type SetActiveProfileInput,
   type UpdateButtonInput,
   type UpdateDeckInput,
@@ -64,12 +72,14 @@ import {
 import { ipcMain } from 'electron';
 import type { ZodType } from 'zod';
 import type { FileLogger } from '../logger';
+import type { ActionService } from '../services/action.service';
 import { buildDashboardSummary } from '../services/dashboard.service';
 
 export interface IpcContext {
   logger: FileLogger;
   db: ConDeckDb;
   getAppInfo: () => AppInfo;
+  actions: ActionService;
 }
 
 const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
@@ -81,7 +91,9 @@ const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
   UNAUTHORIZED: 'NOT_AVAILABLE',
   DEVICE_REVOKED: 'NOT_AVAILABLE',
   OBS_DISCONNECTED: 'NOT_AVAILABLE',
-  ACTION_FAILED: 'INTERNAL_ERROR',
+  ACTION_FAILED: 'ACTION_FAILED',
+  ACTION_TIMEOUT: 'ACTION_TIMEOUT',
+  ACTION_BUSY: 'ACTION_BUSY',
   INTERNAL_ERROR: 'INTERNAL_ERROR',
 };
 
@@ -90,7 +102,7 @@ const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
  * Every payload is validated with the shared Zod schema before it touches the
  * database, and failures are returned as data instead of thrown across IPC.
  */
-export function registerIpcHandlers({ logger, db, getAppInfo }: IpcContext): void {
+export function registerIpcHandlers({ logger, db, getAppInfo, actions }: IpcContext): void {
   const handle = <TInput, TOutput>(
     channel: IpcChannel,
     handler: (input: TInput) => TOutput | Promise<TOutput>,
@@ -252,7 +264,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo }: IpcContext): voi
 
   // ----------------------------------------------------------------- buttons
 
-  handle<CreateButtonInput, DeckButton>('buttons:create', (input) => {
+  handle<CreateButtonInput, DeckButtonWithAction>('buttons:create', (input) => {
     const button = createButton(db, input);
     recordActivity(db, {
       eventType: 'BUTTON_CREATED',
@@ -262,7 +274,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo }: IpcContext): voi
     return button;
   });
 
-  handle<UpdateButtonInput, DeckButton>('buttons:update', (input) => {
+  handle<UpdateButtonInput, DeckButtonWithAction>('buttons:update', (input) => {
     const button = updateButton(db, input);
     recordActivity(db, {
       eventType: 'BUTTON_UPDATED',
@@ -282,7 +294,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo }: IpcContext): voi
     return { id: input.buttonId };
   });
 
-  handle<DuplicateButtonInput, DeckButton>('buttons:duplicate', (input) => {
+  handle<DuplicateButtonInput, DeckButtonWithAction>('buttons:duplicate', (input) => {
     const button = duplicateButton(db, input);
     recordActivity(db, {
       eventType: 'BUTTON_DUPLICATED',
@@ -290,6 +302,79 @@ export function registerIpcHandlers({ logger, db, getAppInfo }: IpcContext): voi
       metadata: { buttonId: button.id, pageId: button.pageId, position: button.position },
     });
     return button;
+  });
+
+  // ----------------------------------------------------------------- actions
+
+  handle<void, ActionCatalogEntry[]>('actions:catalog', () => actions.catalog());
+
+  handle<SetActionInput, ActionRecord>('actions:set', (input) => {
+    const target = getActionTarget(db, input.buttonId);
+    const record = actions.setAction(input);
+    recordActivity(db, {
+      eventType: 'ACTION_CONFIGURED',
+      description: `Action "${actionTypeLabel(record.actionType)}" configured on button "${target.buttonLabel}"`,
+      metadata: {
+        buttonId: record.buttonId,
+        pageId: target.pageId,
+        deckId: target.deckId,
+        actionType: record.actionType,
+      },
+    });
+    logger.info('Button action saved', {
+      buttonId: record.buttonId,
+      actionType: record.actionType,
+    });
+    return record;
+  });
+
+  handle<DeleteActionInput, DeletedRef>('actions:delete', (input) => {
+    const target = getActionTarget(db, input.buttonId);
+    const actionType = actions.removeAction(input.buttonId);
+    recordActivity(db, {
+      eventType: 'ACTION_REMOVED',
+      description: `Action "${actionTypeLabel(actionType)}" removed from button "${target.buttonLabel}"`,
+      metadata: { buttonId: input.buttonId, pageId: target.pageId, actionType },
+    });
+    return { id: input.buttonId };
+  });
+
+  handle<ExecuteActionInput, ActionExecutionResult>('actions:execute', async (input) => {
+    const target = getActionTarget(db, input.buttonId);
+    const result = await actions.execute(input.buttonId);
+
+    recordActivity(db, {
+      eventType: result.status === 'SUCCESS' ? 'ACTION_EXECUTED' : 'ACTION_FAILED',
+      description:
+        result.status === 'SUCCESS'
+          ? `Action "${actionTypeLabel(result.actionType)}" ran on button "${target.buttonLabel}"`
+          : `Action "${actionTypeLabel(result.actionType)}" failed on button "${target.buttonLabel}": ${result.message}`,
+      metadata: {
+        buttonId: input.buttonId,
+        pageId: target.pageId,
+        actionType: result.actionType,
+        status: result.status,
+        code: result.code,
+        durationMs: result.durationMs,
+      },
+    });
+
+    if (result.status === 'SUCCESS') {
+      logger.info('Action executed', {
+        buttonId: input.buttonId,
+        actionType: result.actionType,
+        durationMs: result.durationMs,
+      });
+    } else {
+      logger.warn('Action failed', {
+        buttonId: input.buttonId,
+        actionType: result.actionType,
+        code: result.code,
+        message: result.message,
+      });
+    }
+
+    return result;
   });
 
   // ------------------------------------------------------- devices, activity

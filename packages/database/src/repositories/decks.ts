@@ -3,9 +3,10 @@ import { asc, count, eq, inArray, max } from 'drizzle-orm';
 import {
   AppError,
   defaultGrid,
+  type ActionRecord,
   type CreateDeckInput,
   type Deck,
-  type DeckButton,
+  type DeckButtonWithAction,
   type DeckDetail,
   type DeckPageWithButtons,
   type DeckSummary,
@@ -13,6 +14,7 @@ import {
 } from '@condeck/shared';
 import type { ConDeckDb } from '../client';
 import { buttons, decks, pages } from '../schema';
+import { actionsByButtonIds } from './actions';
 
 type DeckRow = typeof decks.$inferSelect;
 type PageRow = typeof pages.$inferSelect;
@@ -32,22 +34,23 @@ function toDeck(row: DeckRow): Deck {
   };
 }
 
-function toButton(row: ButtonRow): DeckButton {
+function toButton(row: ButtonRow, action: ActionRecord | null): DeckButtonWithAction {
   return {
     id: row.id,
     pageId: row.pageId,
     position: row.position,
     label: row.label,
-    icon: (row.icon ?? null) as DeckButton['icon'],
+    icon: (row.icon ?? null) as DeckButtonWithAction['icon'],
     backgroundColor: row.backgroundColor,
     textColor: row.textColor,
     isEnabled: row.isEnabled,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    action,
   };
 }
 
-function toPage(page: PageRow, pageButtons: DeckButton[]): DeckPageWithButtons {
+function toPage(page: PageRow, pageButtons: DeckButtonWithAction[]): DeckPageWithButtons {
   return {
     id: page.id,
     deckId: page.deckId,
@@ -134,10 +137,15 @@ export function getDeckDetail(db: ConDeckDb, deckId: string): DeckDetail {
           .orderBy(asc(buttons.position))
           .all();
 
-  const buttonsByPage = new Map<string, DeckButton[]>();
+  const actionByButton = actionsByButtonIds(
+    db,
+    buttonRows.map((row) => row.id),
+  );
+
+  const buttonsByPage = new Map<string, DeckButtonWithAction[]>();
   for (const row of buttonRows) {
     const list = buttonsByPage.get(row.pageId) ?? [];
-    list.push(toButton(row));
+    list.push(toButton(row, actionByButton.get(row.id) ?? null));
     buttonsByPage.set(row.pageId, list);
   }
 

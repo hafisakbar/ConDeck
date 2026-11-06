@@ -1,5 +1,14 @@
 import { z } from 'zod';
 import {
+  deleteActionInputSchema,
+  executeActionInputSchema,
+  setActionInputSchema,
+  type ActionCatalogEntry,
+  type ActionExecutionResult,
+  type ActionRecord,
+  type NavigationRequest,
+} from './actions';
+import {
   createButtonInputSchema,
   createDeckInputSchema,
   createPageInputSchema,
@@ -13,7 +22,7 @@ import {
   updateDeckInputSchema,
   updatePageInputSchema,
   type Deck,
-  type DeckButton,
+  type DeckButtonWithAction,
   type DeckDetail,
   type DeckPage,
   type DeckSummary,
@@ -52,6 +61,10 @@ export const ipcChannels = [
   'buttons:update',
   'buttons:delete',
   'buttons:duplicate',
+  'actions:catalog',
+  'actions:set',
+  'actions:delete',
+  'actions:execute',
   'devices:list',
   'activity:list',
 ] as const;
@@ -78,6 +91,10 @@ export const ipcInputSchemas = {
   'buttons:update': updateButtonInputSchema,
   'buttons:delete': deleteButtonInputSchema,
   'buttons:duplicate': duplicateButtonInputSchema,
+  'actions:catalog': z.void(),
+  'actions:set': setActionInputSchema,
+  'actions:delete': deleteActionInputSchema,
+  'actions:execute': executeActionInputSchema,
   'devices:list': z.void(),
   'activity:list': listActivityInputSchema,
 } as const satisfies Record<IpcChannel, z.ZodType>;
@@ -88,6 +105,9 @@ export type IpcErrorCode =
   | 'CONFLICT'
   | 'DATABASE_ERROR'
   | 'NOT_AVAILABLE'
+  | 'ACTION_FAILED'
+  | 'ACTION_TIMEOUT'
+  | 'ACTION_BUSY'
   | 'INTERNAL_ERROR';
 
 export interface IpcSuccess<T> {
@@ -165,7 +185,7 @@ export interface ConDeckBridge {
     backgroundColor?: string;
     textColor?: string;
     isEnabled?: boolean;
-  }): Promise<IpcResult<DeckButton>>;
+  }): Promise<IpcResult<DeckButtonWithAction>>;
   updateButton(input: {
     buttonId: string;
     position?: number;
@@ -174,9 +194,23 @@ export interface ConDeckBridge {
     backgroundColor?: string;
     textColor?: string;
     isEnabled?: boolean;
-  }): Promise<IpcResult<DeckButton>>;
+  }): Promise<IpcResult<DeckButtonWithAction>>;
   deleteButton(input: { buttonId: string }): Promise<IpcResult<DeletedRef>>;
-  duplicateButton(input: { buttonId: string; position: number }): Promise<IpcResult<DeckButton>>;
+  duplicateButton(input: {
+    buttonId: string;
+    position: number;
+  }): Promise<IpcResult<DeckButtonWithAction>>;
+
+  getActionCatalog(): Promise<IpcResult<ActionCatalogEntry[]>>;
+  setAction(input: {
+    buttonId: string;
+    actionType: ActionRecord['actionType'];
+    config: Record<string, unknown>;
+  }): Promise<IpcResult<ActionRecord>>;
+  deleteAction(input: { buttonId: string }): Promise<IpcResult<DeletedRef>>;
+  executeAction(input: { buttonId: string }): Promise<IpcResult<ActionExecutionResult>>;
+  /** Subscribes to navigation actions; returns the unsubscribe function. */
+  onNavigationRequest(listener: (request: NavigationRequest) => void): () => void;
 
   listDevices(): Promise<IpcResult<Device[]>>;
   listActivity(input?: { limit?: number }): Promise<IpcResult<ActivityLog[]>>;
