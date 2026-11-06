@@ -2,7 +2,14 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openDatabase, type ConDeckDatabase } from '@condeck/database';
-import { ipcChannels, type AppInfo, type IpcResult, type Profile } from '@condeck/shared';
+import {
+  ipcChannels,
+  type AppInfo,
+  type DeckButton,
+  type DeckDetail,
+  type IpcResult,
+  type Profile,
+} from '@condeck/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type Handler = (event: unknown, payload: unknown) => Promise<IpcResult<unknown>>;
@@ -122,6 +129,99 @@ describe('ipc handlers', () => {
     if (result.ok) {
       const logs = result.data as Array<{ eventType: string }>;
       expect(logs[0]?.eventType).toBe('PROFILE_CREATED');
+    }
+  });
+});
+
+describe('deck builder channels', () => {
+  async function seedDeck(): Promise<{ profileId: string; detail: DeckDetail }> {
+    const profile = await invoke('profiles:create', { name: 'Streaming' });
+    expect(profile.ok).toBe(true);
+    if (!profile.ok) {
+      throw new Error('profile creation failed');
+    }
+    const profileId = (profile.data as Profile).id;
+
+    const created = await invoke('decks:create', {
+      profileId,
+      name: 'Main deck',
+      columns: 3,
+      rows: 3,
+    });
+    expect(created.ok).toBe(true);
+    if (!created.ok) {
+      throw new Error('deck creation failed');
+    }
+    return { profileId, detail: created.data as DeckDetail };
+  }
+
+  it('creates a deck with a default page and reads it back', async () => {
+    const { detail } = await seedDeck();
+    expect(detail.pages).toHaveLength(1);
+    expect(detail.pages[0]?.name).toBe('Main');
+
+    const fetched = await invoke('decks:get', { deckId: detail.deck.id });
+    expect(fetched.ok).toBe(true);
+    if (fetched.ok) {
+      expect((fetched.data as DeckDetail).deck.name).toBe('Main deck');
+    }
+  });
+
+  it('rejects a grid bigger than the supported bounds', async () => {
+    const { profileId } = await seedDeck();
+
+    const result = await invoke('decks:create', {
+      profileId,
+      name: 'Too big',
+      columns: 12,
+      rows: 3,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('INVALID_INPUT');
+    }
+  });
+
+  it('creates and moves buttons, and reports a taken slot as CONFLICT', async () => {
+    const { detail } = await seedDeck();
+    const pageId = detail.pages[0]?.id ?? '';
+
+    const first = await invoke('buttons:create', { pageId, position: 0, label: 'Go live' });
+    expect(first.ok).toBe(true);
+    if (!first.ok) {
+      return;
+    }
+    const button = first.data as DeckButton;
+
+    const moved = await invoke('buttons:update', { buttonId: button.id, position: 4 });
+    expect(moved.ok).toBe(true);
+    if (moved.ok) {
+      expect((moved.data as DeckButton).position).toBe(4);
+    }
+
+    const conflict = await invoke('buttons:create', { pageId, position: 4, label: 'Copy' });
+    expect(conflict.ok).toBe(false);
+    if (!conflict.ok) {
+      expect(conflict.error.code).toBe('CONFLICT');
+    }
+  });
+
+  it('deletes a page and renumbers the remaining pages', async () => {
+    const { detail } = await seedDeck();
+
+    const withPage = await invoke('pages:create', { deckId: detail.deck.id, name: 'Audio' });
+    expect(withPage.ok).toBe(true);
+    if (!withPage.ok) {
+      return;
+    }
+    const firstPageId = (withPage.data as DeckDetail).pages[0]?.id ?? '';
+
+    const afterDelete = await invoke('pages:delete', { pageId: firstPageId });
+    expect(afterDelete.ok).toBe(true);
+    if (afterDelete.ok) {
+      const updated = afterDelete.data as DeckDetail;
+      expect(updated.pages.map((page) => [page.name, page.position])).toEqual([['Audio', 0]]);
     }
   });
 });
