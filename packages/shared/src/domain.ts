@@ -32,6 +32,30 @@ export const setActiveProfileInputSchema = z.object({
 });
 export type SetActiveProfileInput = z.infer<typeof setActiveProfileInputSchema>;
 
+const profileNameSchema = z
+  .string()
+  .trim()
+  .min(1, 'Profile name is required.')
+  .max(60, 'Profile name is too long.');
+
+export const updateProfileInputSchema = z
+  .object({
+    profileId: z.uuid(),
+    name: profileNameSchema.optional(),
+    /** `null` clears the description; `undefined` keeps it. */
+    description: z.string().trim().max(240, 'Description is too long.').nullable().optional(),
+  })
+  .refine(
+    (value) => value.name !== undefined || value.description !== undefined,
+    'Provide at least one field to update.',
+  );
+export type UpdateProfileInput = z.infer<typeof updateProfileInputSchema>;
+
+export const deleteProfileInputSchema = z.object({
+  profileId: z.uuid(),
+});
+export type DeleteProfileInput = z.infer<typeof deleteProfileInputSchema>;
+
 export const deviceSchema = z.object({
   id: z.uuid(),
   deviceName: z.string(),

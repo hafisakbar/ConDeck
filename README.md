@@ -11,13 +11,24 @@ Pengembangan mengikuti `DEVELOPMENT_ROADMAP.md`, satu phase per iterasi.
 | Phase | Cakupan | Status |
 |---|---|---|
 | 1 — Foundation | Monorepo, Electron, React, Tailwind, SQLite + Drizzle, preload aman, IPC, dashboard, navigasi | ✅ Selesai |
-| 2 — Deck Builder | Deck, page, button grid, button editor | ⏳ Belum |
+| 2 — Deck Builder | Deck, page, button grid, button editor, icon & colour customization, profile edit/delete | ✅ Selesai |
 | 3 — Action Engine | Action registry, validasi, eksekusi, feedback | ⏳ Belum |
 | 4 — OBS Integration | OBS WebSocket v5, scene/stream/record/audio | ⏳ Belum |
 | 5 — Mobile Remote | PWA, WebSocket server, QR pairing, device auth | ⏳ Belum |
 | 6 — Testing & Release | E2E, security, installer Windows | ⏳ Belum |
 
 Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit, bukan data palsu.
+
+### Yang sudah bisa dilakukan (Phase 1 + 2)
+
+- Membuat, mengganti nama, mengubah ukuran grid, dan menghapus deck. Default 3 × 3, dengan preset 4 × 4, 5 × 3, 5 × 5 dan ukuran custom 1–8 baris/kolom.
+- Menambah, mengganti nama, dan menghapus halaman. Posisi halaman otomatis dirapikan setelah penghapusan.
+- Menambah tombol di slot kosong, lalu mengubah label, ikon, warna latar, warna teks, dan status aktifnya.
+- Memindahkan tombol ke slot lain, dan menggandakan tombol ke slot kosong berikutnya.
+- Mengedit dan menghapus profil; deck, halaman, dan tombol di dalamnya ikut terhapus.
+- Semua perubahan langsung tersimpan ke SQLite dan tetap ada setelah aplikasi ditutup.
+
+Konfigurasi action pada tombol belum tersedia karena itu bagian dari Action Engine (Phase 3); tombol saat ini menyimpan tampilannya saja.
 
 ## Prasyarat
 

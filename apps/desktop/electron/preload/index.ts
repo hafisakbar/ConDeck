@@ -5,6 +5,12 @@ import {
   type AppInfo,
   type ConDeckBridge,
   type DashboardSummary,
+  type Deck,
+  type DeckButton,
+  type DeckDetail,
+  type DeckPage,
+  type DeckSummary,
+  type DeletedRef,
   type Device,
   type IpcChannel,
   type IpcFailure,
@@ -33,9 +39,28 @@ function invoke<T>(channel: IpcChannel, input?: unknown): Promise<IpcResult<T>> 
 const bridge: ConDeckBridge = {
   getAppInfo: () => invoke<AppInfo>('app:get-info'),
   getDashboardSummary: () => invoke<DashboardSummary>('dashboard:get-summary'),
+
   listProfiles: () => invoke<Profile[]>('profiles:list'),
   createProfile: (input) => invoke<Profile>('profiles:create', input),
+  updateProfile: (input) => invoke<Profile>('profiles:update', input),
   setActiveProfile: (input) => invoke<Profile>('profiles:set-active', input),
+  deleteProfile: (input) => invoke<DeletedRef>('profiles:delete', input),
+
+  listDecks: (input) => invoke<DeckSummary[]>('decks:list', input),
+  getDeck: (input) => invoke<DeckDetail>('decks:get', input),
+  createDeck: (input) => invoke<DeckDetail>('decks:create', input),
+  updateDeck: (input) => invoke<Deck>('decks:update', input),
+  deleteDeck: (input) => invoke<DeletedRef>('decks:delete', input),
+
+  createPage: (input) => invoke<DeckDetail>('pages:create', input),
+  updatePage: (input) => invoke<DeckPage>('pages:update', input),
+  deletePage: (input) => invoke<DeckDetail>('pages:delete', input),
+
+  createButton: (input) => invoke<DeckButton>('buttons:create', input),
+  updateButton: (input) => invoke<DeckButton>('buttons:update', input),
+  deleteButton: (input) => invoke<DeletedRef>('buttons:delete', input),
+  duplicateButton: (input) => invoke<DeckButton>('buttons:duplicate', input),
+
   listDevices: () => invoke<Device[]>('devices:list'),
   listActivity: (input) => invoke<ActivityLog[]>('activity:list', input ?? {}),
 };

@@ -1,8 +1,29 @@
 import { z } from 'zod';
 import {
+  createButtonInputSchema,
+  createDeckInputSchema,
+  createPageInputSchema,
+  deleteButtonInputSchema,
+  deleteDeckInputSchema,
+  deletePageInputSchema,
+  duplicateButtonInputSchema,
+  getDeckInputSchema,
+  listDecksInputSchema,
+  updateButtonInputSchema,
+  updateDeckInputSchema,
+  updatePageInputSchema,
+  type Deck,
+  type DeckButton,
+  type DeckDetail,
+  type DeckPage,
+  type DeckSummary,
+} from './deck';
+import {
   createProfileInputSchema,
+  deleteProfileInputSchema,
   listActivityInputSchema,
   setActiveProfileInputSchema,
+  updateProfileInputSchema,
 } from './domain';
 import type { AppInfo, Profile, Device, ActivityLog, DashboardSummary } from './domain';
 
@@ -16,7 +37,21 @@ export const ipcChannels = [
   'dashboard:get-summary',
   'profiles:list',
   'profiles:create',
+  'profiles:update',
   'profiles:set-active',
+  'profiles:delete',
+  'decks:list',
+  'decks:get',
+  'decks:create',
+  'decks:update',
+  'decks:delete',
+  'pages:create',
+  'pages:update',
+  'pages:delete',
+  'buttons:create',
+  'buttons:update',
+  'buttons:delete',
+  'buttons:duplicate',
   'devices:list',
   'activity:list',
 ] as const;
@@ -28,7 +63,21 @@ export const ipcInputSchemas = {
   'dashboard:get-summary': z.void(),
   'profiles:list': z.void(),
   'profiles:create': createProfileInputSchema,
+  'profiles:update': updateProfileInputSchema,
   'profiles:set-active': setActiveProfileInputSchema,
+  'profiles:delete': deleteProfileInputSchema,
+  'decks:list': listDecksInputSchema,
+  'decks:get': getDeckInputSchema,
+  'decks:create': createDeckInputSchema,
+  'decks:update': updateDeckInputSchema,
+  'decks:delete': deleteDeckInputSchema,
+  'pages:create': createPageInputSchema,
+  'pages:update': updatePageInputSchema,
+  'pages:delete': deletePageInputSchema,
+  'buttons:create': createButtonInputSchema,
+  'buttons:update': updateButtonInputSchema,
+  'buttons:delete': deleteButtonInputSchema,
+  'buttons:duplicate': duplicateButtonInputSchema,
   'devices:list': z.void(),
   'activity:list': listActivityInputSchema,
 } as const satisfies Record<IpcChannel, z.ZodType>;
@@ -64,13 +113,71 @@ export function ipcFailure(code: IpcErrorCode, message: string): IpcFailure {
   return { ok: false, error: { code, message } };
 }
 
+/** Result of deleting a record, so the renderer knows what to refresh. */
+export interface DeletedRef {
+  id: string;
+}
+
+export interface DeletedDeck extends DeletedRef {
+  id: string;
+}
+
 /** API exposed on `window.condeck` by the preload script. */
 export interface ConDeckBridge {
   getAppInfo(): Promise<IpcResult<AppInfo>>;
   getDashboardSummary(): Promise<IpcResult<DashboardSummary>>;
+
   listProfiles(): Promise<IpcResult<Profile[]>>;
   createProfile(input: { name: string; description?: string }): Promise<IpcResult<Profile>>;
+  updateProfile(input: {
+    profileId: string;
+    name?: string;
+    description?: string | null;
+  }): Promise<IpcResult<Profile>>;
   setActiveProfile(input: { profileId: string }): Promise<IpcResult<Profile>>;
+  deleteProfile(input: { profileId: string }): Promise<IpcResult<DeletedRef>>;
+
+  listDecks(input: { profileId: string }): Promise<IpcResult<DeckSummary[]>>;
+  getDeck(input: { deckId: string }): Promise<IpcResult<DeckDetail>>;
+  createDeck(input: {
+    profileId: string;
+    name: string;
+    columns: number;
+    rows: number;
+  }): Promise<IpcResult<DeckDetail>>;
+  updateDeck(input: {
+    deckId: string;
+    name?: string;
+    columns?: number;
+    rows?: number;
+  }): Promise<IpcResult<Deck>>;
+  deleteDeck(input: { deckId: string }): Promise<IpcResult<DeletedRef>>;
+
+  createPage(input: { deckId: string; name: string }): Promise<IpcResult<DeckDetail>>;
+  updatePage(input: { pageId: string; name: string }): Promise<IpcResult<DeckPage>>;
+  deletePage(input: { pageId: string }): Promise<IpcResult<DeckDetail>>;
+
+  createButton(input: {
+    pageId: string;
+    position: number;
+    label: string;
+    icon?: string;
+    backgroundColor?: string;
+    textColor?: string;
+    isEnabled?: boolean;
+  }): Promise<IpcResult<DeckButton>>;
+  updateButton(input: {
+    buttonId: string;
+    position?: number;
+    label?: string;
+    icon?: string | null;
+    backgroundColor?: string;
+    textColor?: string;
+    isEnabled?: boolean;
+  }): Promise<IpcResult<DeckButton>>;
+  deleteButton(input: { buttonId: string }): Promise<IpcResult<DeletedRef>>;
+  duplicateButton(input: { buttonId: string; position: number }): Promise<IpcResult<DeckButton>>;
+
   listDevices(): Promise<IpcResult<Device[]>>;
   listActivity(input?: { limit?: number }): Promise<IpcResult<ActivityLog[]>>;
 }

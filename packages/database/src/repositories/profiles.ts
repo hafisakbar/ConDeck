@@ -1,6 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import { count, desc, eq } from 'drizzle-orm';
-import { AppError, type CreateProfileInput, type Profile } from '@condeck/shared';
+import { asc, count, desc, eq } from 'drizzle-orm';
+import {
+  AppError,
+  type CreateProfileInput,
+  type Profile,
+  type UpdateProfileInput,
+} from '@condeck/shared';
 import type { ConDeckDb } from '../client';
 import { profiles } from '../schema';
 
@@ -60,6 +65,71 @@ export function createProfile(db: ConDeckDb, input: CreateProfileInput): Profile
       throw new AppError('DATABASE_ERROR', 'Profile could not be created.');
     }
     return toProfile(row);
+  });
+}
+
+/** Renames a profile and/or replaces its description (PRD §5.7). */
+export function updateProfile(db: ConDeckDb, input: UpdateProfileInput): Profile {
+  return db.transaction((tx) => {
+    const current = tx.select().from(profiles).where(eq(profiles.id, input.profileId)).get();
+    if (!current) {
+      throw new AppError('NOT_FOUND', 'Profile not found.');
+    }
+
+    const updated = tx
+      .update(profiles)
+      .set({
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(input.description !== undefined
+          ? {
+              description:
+                input.description && input.description.length > 0 ? input.description : null,
+            }
+          : {}),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(profiles.id, current.id))
+      .returning()
+      .get();
+
+    if (!updated) {
+      throw new AppError('DATABASE_ERROR', 'Profile could not be updated.');
+    }
+    return toProfile(updated);
+  });
+}
+
+/**
+ * Deletes a profile. Decks, pages, buttons and actions are removed by the
+ * database cascade (DATABASE_DESIGN.md §8). If the deleted profile was active,
+ * the oldest remaining profile takes over so the app keeps a working context.
+ */
+export function deleteProfile(
+  db: ConDeckDb,
+  profileId: string,
+): { profileId: string; remainingProfiles: number } {
+  return db.transaction((tx) => {
+    const target = tx.select().from(profiles).where(eq(profiles.id, profileId)).get();
+    if (!target) {
+      throw new AppError('NOT_FOUND', 'Profile not found.');
+    }
+
+    tx.delete(profiles).where(eq(profiles.id, profileId)).run();
+
+    const [remaining] = tx.select({ value: count() }).from(profiles).all();
+    const remainingProfiles = remaining?.value ?? 0;
+
+    if (target.isActive && remainingProfiles > 0) {
+      const next = tx.select().from(profiles).orderBy(asc(profiles.createdAt)).get();
+      if (next) {
+        tx.update(profiles)
+          .set({ isActive: true, updatedAt: new Date().toISOString() })
+          .where(eq(profiles.id, next.id))
+          .run();
+      }
+    }
+
+    return { profileId, remainingProfiles };
   });
 }
 
