@@ -1,4 +1,12 @@
-import type { ButtonIconName, DeckDetail, DeckSummary, UpdateButtonInput } from '@condeck/shared';
+import type {
+  ActionCatalogEntry,
+  ActionType,
+  ButtonIconName,
+  DeckDetail,
+  DeckSummary,
+  NavigationDirection,
+  UpdateButtonInput,
+} from '@condeck/shared';
 import { create } from 'zustand';
 import { getBridge, toErrorMessage, unwrap } from '../lib/desktop-bridge';
 
@@ -13,6 +21,13 @@ export interface ButtonDraft {
   position: number;
 }
 
+/** Latest execution feedback of one button, shown on its tile. */
+export interface ExecutionState {
+  status: 'running' | 'success' | 'failed';
+  message: string;
+  actionType: ActionType | null;
+}
+
 interface DeckState {
   profileId: string | null;
   status: DeckStatus;
@@ -23,6 +38,8 @@ interface DeckState {
   busy: boolean;
   error: string | null;
   lastSavedAt: string | null;
+  catalog: ActionCatalogEntry[];
+  executions: Record<string, ExecutionState>;
 
   load: (profileId: string | null) => Promise<void>;
   selectDeck: (deckId: string) => Promise<void>;
@@ -38,11 +55,30 @@ interface DeckState {
   updateButton: (patch: Partial<ButtonDraft>) => Promise<boolean>;
   deleteButton: (buttonId?: string) => Promise<boolean>;
   duplicateButton: (position: number) => Promise<boolean>;
+  loadCatalog: () => Promise<void>;
+  saveAction: (input: {
+    buttonId: string;
+    actionType: ActionType;
+    config: Record<string, unknown>;
+  }) => Promise<boolean>;
+  removeAction: (buttonId: string) => Promise<boolean>;
+  executeButton: (buttonId: string) => Promise<void>;
+  navigate: (direction: NavigationDirection) => void;
   clearError: () => void;
 }
 
 function firstPageId(detail: DeckDetail | null): string | null {
   return detail?.pages[0]?.id ?? null;
+}
+
+/** Drops the stale execution feedback of one button. */
+function withoutExecution(
+  executions: Record<string, ExecutionState>,
+  buttonId: string,
+): Record<string, ExecutionState> {
+  const next = { ...executions };
+  delete next[buttonId];
+  return next;
 }
 
 export const useDeckStore = create<DeckState>((set, get) => ({
@@ -55,6 +91,8 @@ export const useDeckStore = create<DeckState>((set, get) => ({
   busy: false,
   error: null,
   lastSavedAt: null,
+  catalog: [],
+  executions: {},
 
   async load(profileId) {
     if (!profileId) {
@@ -66,6 +104,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
         activePageId: null,
         selectedButtonId: null,
         error: null,
+        executions: {},
       });
       return;
     }
@@ -96,7 +135,13 @@ export const useDeckStore = create<DeckState>((set, get) => ({
       const previousPageId = get().activePageId;
       const keepPage = detail.pages.find((page) => page.id === previousPageId);
       const pageId = keepPage?.id ?? firstPageId(detail);
-      set({ detail, activePageId: pageId, selectedButtonId: null, status: 'ready' });
+      set({
+        detail,
+        activePageId: pageId,
+        selectedButtonId: null,
+        status: 'ready',
+        executions: {},
+      });
     } catch (error) {
       set({ error: toErrorMessage(error) });
     } finally {
@@ -128,6 +173,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
         detail,
         activePageId: firstPageId(detail),
         selectedButtonId: null,
+        executions: {},
         lastSavedAt: new Date().toISOString(),
       });
       return true;
@@ -183,6 +229,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
         detail: null,
         activePageId: null,
         selectedButtonId: null,
+        executions: {},
         lastSavedAt: new Date().toISOString(),
       });
       if (nextDeckId) {
@@ -257,6 +304,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
         detail: updated,
         activePageId,
         selectedButtonId: null,
+        executions: {},
         lastSavedAt: new Date().toISOString(),
       });
       return true;
@@ -393,6 +441,143 @@ export const useDeckStore = create<DeckState>((set, get) => ({
     } finally {
       set({ busy: false });
     }
+  },
+
+  async loadCatalog() {
+    if (get().catalog.length > 0) {
+      return;
+    }
+    try {
+      const catalog = await unwrap(getBridge().getActionCatalog());
+      set({ catalog });
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+    }
+  },
+
+  async saveAction(input) {
+    if (!get().detail) {
+      return false;
+    }
+
+    set({ busy: true, error: null });
+    try {
+      const action = await unwrap(getBridge().setAction(input));
+      set((state) => ({
+        detail: state.detail
+          ? {
+              ...state.detail,
+              pages: state.detail.pages.map((page) => ({
+                ...page,
+                buttons: page.buttons.map((button) =>
+                  button.id === action.buttonId ? { ...button, action } : button,
+                ),
+              })),
+            }
+          : null,
+        executions: withoutExecution(state.executions, action.buttonId),
+        lastSavedAt: new Date().toISOString(),
+      }));
+      return true;
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+      return false;
+    } finally {
+      set({ busy: false });
+    }
+  },
+
+  async removeAction(buttonId) {
+    if (!get().detail) {
+      return false;
+    }
+
+    set({ busy: true, error: null });
+    try {
+      await unwrap(getBridge().deleteAction({ buttonId }));
+      set((state) => ({
+        detail: state.detail
+          ? {
+              ...state.detail,
+              pages: state.detail.pages.map((page) => ({
+                ...page,
+                buttons: page.buttons.map((button) =>
+                  button.id === buttonId ? { ...button, action: null } : button,
+                ),
+              })),
+            }
+          : null,
+        executions: withoutExecution(state.executions, buttonId),
+        lastSavedAt: new Date().toISOString(),
+      }));
+      return true;
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+      return false;
+    } finally {
+      set({ busy: false });
+    }
+  },
+
+  async executeButton(buttonId) {
+    const state = get();
+    const button = state.detail?.pages
+      .flatMap((page) => page.buttons)
+      .find((entry) => entry.id === buttonId);
+
+    set((current) => ({
+      executions: {
+        ...current.executions,
+        [buttonId]: {
+          status: 'running',
+          message: 'Running…',
+          actionType: button?.action?.actionType ?? null,
+        },
+      },
+    }));
+
+    try {
+      const result = await unwrap(getBridge().executeAction({ buttonId }));
+      set((current) => ({
+        executions: {
+          ...current.executions,
+          [buttonId]: {
+            status: result.status === 'SUCCESS' ? 'success' : 'failed',
+            message: result.message,
+            actionType: result.actionType,
+          },
+        },
+      }));
+    } catch (error) {
+      const message = toErrorMessage(error);
+      set((current) => ({
+        executions: {
+          ...current.executions,
+          [buttonId]: {
+            status: 'failed',
+            message,
+            actionType: button?.action?.actionType ?? null,
+          },
+        },
+      }));
+    }
+  },
+
+  navigate(direction) {
+    const { detail, activePageId } = get();
+    const pages = detail?.pages ?? [];
+    if (pages.length === 0) {
+      return;
+    }
+
+    const index = Math.max(
+      0,
+      pages.findIndex((page) => page.id === activePageId),
+    );
+    const nextIndex =
+      direction === 'next' ? (index + 1) % pages.length : (index - 1 + pages.length) % pages.length;
+
+    set({ activePageId: pages[nextIndex]?.id ?? null, selectedButtonId: null });
   },
 
   clearError() {

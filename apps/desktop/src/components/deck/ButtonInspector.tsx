@@ -1,6 +1,13 @@
-import type { ButtonIconName, DeckButton } from '@condeck/shared';
+import type {
+  ActionCatalogEntry,
+  ActionType,
+  ButtonIconName,
+  DeckButtonWithAction,
+} from '@condeck/shared';
 import { Copy, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import type { ExecutionState } from '../../stores/deck-store';
+import { ActionEditor } from './ActionEditor';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -20,15 +27,20 @@ export interface ButtonPatch {
 }
 
 export interface ButtonInspectorProps {
-  button: DeckButton;
-  pageButtons: DeckButton[];
+  button: DeckButtonWithAction;
+  pageButtons: DeckButtonWithAction[];
   columns: number;
   rows: number;
   busy: boolean;
+  catalog: ActionCatalogEntry[];
+  execution: ExecutionState | undefined;
   onClose: () => void;
   onSave: (patch: ButtonPatch) => void;
   onDuplicate: (position: number) => void;
   onDelete: () => void;
+  onSaveAction: (buttonId: string, actionType: ActionType, config: Record<string, unknown>) => void;
+  onRemoveAction: (buttonId: string) => void;
+  onRunAction: (buttonId: string) => void;
 }
 
 export function ButtonInspector({
@@ -37,10 +49,15 @@ export function ButtonInspector({
   columns,
   rows,
   busy,
+  catalog,
+  execution,
   onClose,
   onSave,
   onDuplicate,
   onDelete,
+  onSaveAction,
+  onRemoveAction,
+  onRunAction,
 }: ButtonInspectorProps) {
   const [label, setLabel] = useState(button.label);
   const [icon, setIcon] = useState<ButtonIconName | null>(button.icon);
@@ -156,10 +173,15 @@ export function ButtonInspector({
           onChange={setIsEnabled}
         />
 
-        <p className="rounded-control border border-border-subtle bg-surface-raised px-3 py-2 text-[11px] leading-relaxed text-content-subtle">
-          Action configuration arrives with the Action Engine in Phase 3. This phase stores the
-          appearance only.
-        </p>
+        <ActionEditor
+          button={button}
+          catalog={catalog}
+          busy={busy}
+          execution={execution}
+          onSave={onSaveAction}
+          onRemove={onRemoveAction}
+          onRun={onRunAction}
+        />
       </div>
 
       <div className="space-y-2 border-t border-border-subtle px-4 py-3">

@@ -38,6 +38,8 @@ export function DecksPage() {
   const busy = useDeckStore((state) => state.busy);
   const error = useDeckStore((state) => state.error);
   const lastSavedAt = useDeckStore((state) => state.lastSavedAt);
+  const catalog = useDeckStore((state) => state.catalog);
+  const executions = useDeckStore((state) => state.executions);
 
   const load = useDeckStore((state) => state.load);
   const selectDeck = useDeckStore((state) => state.selectDeck);
@@ -53,6 +55,11 @@ export function DecksPage() {
   const updateButton = useDeckStore((state) => state.updateButton);
   const removeButton = useDeckStore((state) => state.deleteButton);
   const duplicateButton = useDeckStore((state) => state.duplicateButton);
+  const loadCatalog = useDeckStore((state) => state.loadCatalog);
+  const saveAction = useDeckStore((state) => state.saveAction);
+  const removeAction = useDeckStore((state) => state.removeAction);
+  const executeButton = useDeckStore((state) => state.executeButton);
+  const navigate = useDeckStore((state) => state.navigate);
   const clearError = useDeckStore((state) => state.clearError);
 
   const activeProfile = profiles.find((profile) => profile.isActive) ?? null;
@@ -65,6 +72,21 @@ export function DecksPage() {
   useEffect(() => {
     void load(profileId);
   }, [profileId, load]);
+
+  useEffect(() => {
+    void loadCatalog();
+  }, [loadCatalog]);
+
+  // NAV_* actions run in the main process and come back as a page request.
+  useEffect(() => {
+    const bridge = typeof window !== 'undefined' ? window.condeck : undefined;
+    if (!bridge) {
+      return;
+    }
+    return bridge.onNavigationRequest((request) => {
+      navigate(request.direction);
+    });
+  }, [navigate]);
 
   const pages = detail?.pages ?? [];
   const activePage = pages.find((page) => page.id === activePageId) ?? pages[0] ?? null;
@@ -164,7 +186,7 @@ export function DecksPage() {
                 description={`${detail.deck.columns} × ${detail.deck.rows} grid · ${detail.deck.columns * detail.deck.rows} slots per page`}
                 action={
                   <div className="flex items-center gap-1.5">
-                    <Badge tone="accent">Phase 2</Badge>
+                    <Badge tone="accent">Phase 3</Badge>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -203,12 +225,14 @@ export function DecksPage() {
                       rows={detail.deck.rows}
                       buttons={activePage.buttons}
                       selectedButtonId={selectedButtonId}
+                      executions={executions}
                       onSelectButton={selectButton}
                       onCreateButton={(position) => void createButton(position)}
+                      onRunButton={(buttonId) => void executeButton(buttonId)}
                     />
                     <p className="text-[11px] text-content-subtle">
-                      Click an empty slot to add a button. Click a button to edit its label, icon and
-                      colours.
+                      Click an empty slot to add a button. Click a button to edit its label, icon,
+                      colours and action. A button with an action shows a play control that runs it.
                     </p>
                   </>
                 ) : (
@@ -246,19 +270,27 @@ export function DecksPage() {
               columns={detail.deck.columns}
               rows={detail.deck.rows}
               busy={busy}
+              catalog={catalog}
+              execution={executions[selectedButton.id]}
               onClose={() => selectButton(null)}
               onSave={(patch) => void handleButtonSave(patch)}
               onDuplicate={(position) => void duplicateButton(position)}
               onDelete={() => openDialog('delete-button')}
+              onSaveAction={(buttonId, actionType, config) =>
+                void saveAction({ buttonId, actionType, config })
+              }
+              onRemoveAction={(buttonId) => void removeAction(buttonId)}
+              onRunAction={(buttonId) => void executeButton(buttonId)}
             />
           ) : (
             <>
               <PanelHeader title="Properties" description="Select a button to edit it." />
               <PanelBody>
                 <p className="text-xs leading-relaxed text-content-muted">
-                  Buttons store a label, an icon, a background colour, a text colour and an enabled
-                  state. Everything is written to SQLite through validated IPC, so the deck survives
-                  a restart.
+                  Buttons store a label, an icon, colours, an enabled state and one action. Actions
+                  are validated before they are saved and only run through the action registry.
+                  Everything is written to SQLite through validated IPC, so the deck survives a
+                  restart.
                 </p>
               </PanelBody>
             </>
