@@ -71,9 +71,35 @@ Semua handler di main process melewati helper yang sama: parse dengan Zod → ek
 
 ---
 
+### ADR-008 — Deck baru otomatis memiliki satu halaman "Main"
+
+`decks:create` membuat deck dan halaman pertama bernama "Main" (position 0) dalam satu transaksi. Alasan: DATABASE_DESIGN.md menghubungkan tombol ke halaman, sehingga deck tanpa halaman tidak dapat digunakan sama sekali; PRD §6.1 juga mengalirkan pengguna langsung dari "membuat deck" ke "menambahkan tombol".
+
+### ADR-009 — Batas grid 1–8 kolom dan 1–8 baris
+
+PRD §5.2 mengizinkan konfigurasi custom tanpa menyebut batas. Diterapkan batas 8 × 8 agar grid tetap terbaca di jendela desktop dan tiap slot masih cukup besar untuk label. Preset 3 × 3 (default), 4 × 4, 5 × 3 dan 5 × 5 disediakan sesuai PRD.
+
+### ADR-010 — Memindahkan tombol lewat properties panel, bukan drag & drop
+
+Acceptance criteria Phase 2 hanya mensyaratkan "tombol dapat dipindahkan atau diubah posisinya". Drag & drop tercatat sebagai fitur v1.1 pada PRD §4.2, sehingga pemindahan dilakukan dengan memilih slot tujuan di panel properti — berfungsi penuh tanpa menambah dependency dan tanpa mendahului scope v1.1.
+
+### ADR-011 — Profile edit/delete ikut dikerjakan di Phase 2
+
+DEVELOPMENT_ROADMAP §4 tidak menyebut profile management, tetapi PRD §10 (Phase 2) menyebutnya dan PRD §5.7 mensyaratkan create/edit/delete/activate. Karena PRD berprioritas lebih tinggi, `profiles:update` dan `profiles:delete` ditambahkan. Penghapusan memakai cascade database; bila profil aktif dihapus, profil tertua yang tersisa otomatis menjadi aktif agar aplikasi tetap punya konteks.
+
+### ADR-012 — Konfigurasi action ditunda ke Phase 3
+
+Button editor Phase 2 hanya menyimpan label, ikon, warna, status aktif, dan posisi. Panel properti menampilkan keterangan bahwa konfigurasi action menyusul di Action Engine, bukan field yang tidak berfungsi — sesuai aturan "jangan membuat mock implementation".
+
+### ADR-013 — Konsistensi posisi halaman setelah penghapusan
+
+`pages:delete` menomori ulang halaman yang tersisa dalam dua fase (offset sementara lalu posisi final) agar unique index `(deck_id, position)` tidak dilanggar saat satu baris bergeser ke posisi baris lain.
+
+---
+
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
 
 1. Binding native Electron belum diverifikasi di lingkungan build saat ini (Linux tanpa GUI, target Windows).
 2. Integrasi OBS, action engine, remote server, dan QR pairing belum diimplementasikan (Phase 3–5).
-3. Penghapusan profile dari UI belum tersedia (Phase 2 melengkapi CRUD profile; skema DB sudah mendukung cascade).
+3. Konfigurasi action pada tombol, drag & drop, dan custom image belum ada (Phase 3 dan v1.1 PRD §4.2).
 4. Belum ada electron-builder config/installer (Phase 6).
