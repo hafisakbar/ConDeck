@@ -15,7 +15,13 @@ interface AppState {
   busyProfileId: string | null;
   refresh: () => Promise<void>;
   createProfile: (input: { name: string; description?: string }) => Promise<boolean>;
+  updateProfile: (input: {
+    profileId: string;
+    name?: string;
+    description?: string | null;
+  }) => Promise<boolean>;
   activateProfile: (profileId: string) => Promise<void>;
+  deleteProfile: (profileId: string) => Promise<boolean>;
   dismissError: () => void;
 }
 
@@ -65,6 +71,18 @@ export const useAppStore = create<AppState>((set, get) => ({
     }
   },
 
+  async updateProfile(input) {
+    try {
+      const bridge = getBridge();
+      await unwrap(bridge.updateProfile(input));
+      await get().refresh();
+      return true;
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+      return false;
+    }
+  },
+
   async activateProfile(profileId) {
     set({ busyProfileId: profileId });
     try {
@@ -73,6 +91,21 @@ export const useAppStore = create<AppState>((set, get) => ({
       await get().refresh();
     } catch (error) {
       set({ error: toErrorMessage(error) });
+    } finally {
+      set({ busyProfileId: null });
+    }
+  },
+
+  async deleteProfile(profileId) {
+    set({ busyProfileId: profileId });
+    try {
+      const bridge = getBridge();
+      await unwrap(bridge.deleteProfile({ profileId }));
+      await get().refresh();
+      return true;
+    } catch (error) {
+      set({ error: toErrorMessage(error) });
+      return false;
     } finally {
       set({ busyProfileId: null });
     }
