@@ -30,6 +30,11 @@ export {
   type ActionTarget,
 } from './repositories/actions';
 export { assertPositionInGrid, getPageGrid, type PageGrid } from './repositories/grid';
-export { getIntegrationByProvider, type IntegrationRow } from './repositories/integrations';
+export {
+  getIntegrationByProvider,
+  upsertIntegration,
+  type IntegrationRow,
+  type UpsertIntegrationInput,
+} from './repositories/integrations';
 export { countDevices, listDevices } from './repositories/devices';
 export { listRecentActivity, recordActivity, type RecordActivityInput } from './repositories/activity-logs';
