@@ -61,7 +61,11 @@ import {
   type IpcResult,
   type ListActivityInput,
   type ListDecksInput,
+  type ObsSnapshot,
+  type ObsTestConnectionInput,
+  type ObsTestResult,
   type Profile,
+  type SaveObsSettingsInput,
   type SetActionInput,
   type SetActiveProfileInput,
   type UpdateButtonInput,
@@ -74,12 +78,14 @@ import type { ZodType } from 'zod';
 import type { FileLogger } from '../logger';
 import type { ActionService } from '../services/action.service';
 import { buildDashboardSummary } from '../services/dashboard.service';
+import type { ObsService } from '../services/obs.service';
 
 export interface IpcContext {
   logger: FileLogger;
   db: ConDeckDb;
   getAppInfo: () => AppInfo;
   actions: ActionService;
+  obs: ObsService;
 }
 
 const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
@@ -91,6 +97,8 @@ const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
   UNAUTHORIZED: 'NOT_AVAILABLE',
   DEVICE_REVOKED: 'NOT_AVAILABLE',
   OBS_DISCONNECTED: 'NOT_AVAILABLE',
+  OBS_CONNECTION_FAILED: 'NOT_AVAILABLE',
+  OBS_REQUEST_FAILED: 'ACTION_FAILED',
   ACTION_FAILED: 'ACTION_FAILED',
   ACTION_TIMEOUT: 'ACTION_TIMEOUT',
   ACTION_BUSY: 'ACTION_BUSY',
@@ -102,7 +110,7 @@ const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
  * Every payload is validated with the shared Zod schema before it touches the
  * database, and failures are returned as data instead of thrown across IPC.
  */
-export function registerIpcHandlers({ logger, db, getAppInfo, actions }: IpcContext): void {
+export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: IpcContext): void {
   const handle = <TInput, TOutput>(
     channel: IpcChannel,
     handler: (input: TInput) => TOutput | Promise<TOutput>,
@@ -139,7 +147,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions }: IpcCont
   handle<void, AppInfo>('app:get-info', () => getAppInfo());
 
   handle<void, DashboardSummary>('dashboard:get-summary', () =>
-    buildDashboardSummary({ db, appInfo: getAppInfo() }),
+    buildDashboardSummary({ db, appInfo: getAppInfo(), obsStatus: () => obs.getStatus() }),
   );
 
   // ---------------------------------------------------------------- profiles
@@ -376,6 +384,61 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions }: IpcCont
 
     return result;
   });
+
+  // --------------------------------------------------------------------- OBS
+
+  handle<void, ObsSnapshot>('obs:get-snapshot', () => obs.getSnapshot());
+
+  handle<SaveObsSettingsInput, ObsSnapshot>('obs:save-settings', (input) => {
+    const snapshot = obs.saveSettings(input);
+    recordActivity(db, {
+      eventType: 'OBS_SETTINGS_SAVED',
+      description: `OBS settings saved for ${snapshot.host}:${snapshot.port}`,
+      metadata: {
+        host: snapshot.host,
+        port: snapshot.port,
+        isEnabled: snapshot.isEnabled,
+        hasPassword: snapshot.hasPassword,
+      },
+    });
+    logger.info('OBS settings saved', { host: snapshot.host, port: snapshot.port });
+    return snapshot;
+  });
+
+  handle<void, ObsSnapshot>('obs:connect', async () => {
+    try {
+      const snapshot = await obs.connect();
+      recordActivity(db, {
+        eventType: 'OBS_CONNECTED',
+        description: `Connected to OBS at ${snapshot.host}:${snapshot.port}`,
+        metadata: { host: snapshot.host, port: snapshot.port, sceneName: snapshot.sceneName },
+      });
+      logger.info('OBS connected', { host: snapshot.host, port: snapshot.port });
+      return snapshot;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error.';
+      recordActivity(db, {
+        eventType: 'OBS_CONNECTION_FAILED',
+        description: `Could not connect to OBS: ${message}`,
+      });
+      throw error;
+    }
+  });
+
+  handle<void, ObsSnapshot>('obs:disconnect', async () => {
+    const snapshot = await obs.disconnect();
+    recordActivity(db, {
+      eventType: 'OBS_DISCONNECTED',
+      description: 'Disconnected from OBS Studio',
+    });
+    return snapshot;
+  });
+
+  handle<ObsTestConnectionInput, ObsTestResult>('obs:test-connection', (input) =>
+    obs.testConnection(input),
+  );
+
+  handle<void, string[]>('obs:list-scenes', () => obs.listScenes());
 
   // ------------------------------------------------------- devices, activity
 
