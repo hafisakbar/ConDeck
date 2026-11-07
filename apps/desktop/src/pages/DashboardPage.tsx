@@ -6,11 +6,14 @@ import { Button } from '../components/ui/Button';
 import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel';
 import { StatusIndicator } from '../components/ui/StatusIndicator';
 import { obsLabelByState, obsToneByState } from '../lib/obs';
+import { obsSnapshotMessage } from '@condeck/shared';
 import { useAppStore } from '../stores/app-store';
 import { useNavigationStore } from '../stores/navigation-store';
+import { useObsStore } from '../stores/obs-store';
 
 export function DashboardPage() {
   const summary = useAppStore((state) => state.summary);
+  const obsSnapshot = useObsStore((state) => state.snapshot);
   const setView = useNavigationStore((state) => state.setView);
 
   if (!summary) {
@@ -18,6 +21,10 @@ export function DashboardPage() {
   }
 
   const isFirstRun = summary.profile.total === 0;
+  const obsState = obsSnapshot?.state ?? summary.obs.state;
+  const obsDetail = obsSnapshot
+    ? obsSnapshotMessage(obsSnapshot)
+    : (summary.obs.message ?? 'Ready');
 
   return (
     <div className="space-y-5">
@@ -37,8 +44,8 @@ export function DashboardPage() {
         <StatCard
           icon={MonitorPlay}
           label="OBS Studio"
-          value={obsLabelByState[summary.obs.state]}
-          detail={<StatusIndicator tone={obsToneByState[summary.obs.state]} label={summary.obs.message ?? 'Ready'} />}
+          value={obsLabelByState[obsState]}
+          detail={<StatusIndicator tone={obsToneByState[obsState]} label={obsDetail} />}
         />
         <StatCard
           icon={Radio}
