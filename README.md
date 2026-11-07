@@ -12,14 +12,14 @@ Pengembangan mengikuti `DEVELOPMENT_ROADMAP.md`, satu phase per iterasi.
 |---|---|---|
 | 1 — Foundation | Monorepo, Electron, React, Tailwind, SQLite + Drizzle, preload aman, IPC, dashboard, navigasi | ✅ Selesai |
 | 2 — Deck Builder | Deck, page, button grid, button editor, icon & colour customization, profile edit/delete | ✅ Selesai |
-| 3 — Action Engine | Action registry, validasi, eksekusi, feedback | ✅ Selesai (OBS menunggu Phase 4) |
-| 4 — OBS Integration | OBS WebSocket v5, scene/stream/record/audio | ⏳ Belum |
+| 3 — Action Engine | Action registry, validasi, eksekusi, feedback | ✅ Selesai |
+| 4 — OBS Integration | OBS WebSocket v5, scene/stream/record/audio | ✅ Selesai |
 | 5 — Mobile Remote | PWA, WebSocket server, QR pairing, device auth | ⏳ Belum |
 | 6 — Testing & Release | E2E, security, installer Windows | ⏳ Belum |
 
 Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit, bukan data palsu.
 
-### Yang sudah bisa dilakukan (Phase 1 + 2 + 3)
+### Yang sudah bisa dilakukan (Phase 1 + 2 + 3 + 4)
 
 - Membuat, mengganti nama, mengubah ukuran grid, dan menghapus deck. Default 3 × 3, dengan preset 4 × 4, 5 × 3, 5 × 5 dan ukuran custom 1–8 baris/kolom.
 - Menambah, mengganti nama, dan menghapus halaman. Posisi halaman otomatis dirapikan setelah penghapusan.
@@ -30,7 +30,12 @@ Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit
 - Konfigurasi action divalidasi dengan schema khusus per jenis action sebelum ditulis ke database; konfigurasi tidak valid ditolak dengan pesan yang jelas.
 - Menjalankan action dari grid editor lewat tombol play: status berjalan, hasil sukses, dan pesan gagal tampil langsung di tombol dan panel properti.
 - Action hanya dieksekusi berdasarkan tombol (button id) melalui registry; renderer tidak pernah mengirim perintah bebas dan tidak ada eksekusi shell.
-- Action Navigation mengubah halaman deck aktif di desktop; action System membuka aplikasi/URL dengan handler default OS; action OBS tervalidasi tetapi melaporkan `OBS_DISCONNECTED` sampai integrasi OBS (Phase 4).
+- Action Navigation mengubah halaman deck aktif di desktop; action System membuka aplikasi/URL dengan handler default OS.
+- Menghubungkan OBS Studio lewat OBS WebSocket v5 dari halaman Integrations: host, port, password, test connection, connect/disconnect, dan toggle aktif/nonaktif.
+- Action OBS benar-benar mengontrol OBS: pindah scene, mulai/hentikan streaming, mulai/hentikan recording, toggle dan set mute audio input — dengan konfirmasi dari respons OBS, bukan asumsi sukses.
+- Status OBS disinkronkan real-time: mengganti scene atau memulai stream langsung di OBS ikut tampil di ConDeck, begitu juga saat koneksi terputus.
+- Daftar scene OBS dipakai sebagai pilihan di editor action, jadi nama scene tidak perlu diketik manual saat OBS terhubung.
+- Password OBS tidak pernah disimpan plaintext: hanya disimpan sebagai ciphertext Electron `safeStorage` di kolom `credential_reference`.
 - Semua perubahan langsung tersimpan ke SQLite dan tetap ada setelah aplikasi ditutup.
 
 ## Prasyarat
@@ -38,7 +43,7 @@ Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit
 - **Windows 10/11 64-bit** (target rilis) — proyek dapat di-typecheck/build di OS lain, tetapi aplikasi Electron belum diuji di luar Windows.
 - Node.js >= 20.19
 - pnpm 10 (`npm i -g pnpm@10`)
-- OBS Studio 28+ dengan WebSocket server aktif (dibutuhkan mulai Phase 4)
+- OBS Studio 28+ dengan WebSocket server aktif (Tools → WebSocket Server Settings)
 
 ## Instalasi
 
@@ -80,6 +85,7 @@ condeck/
 │   ├── config/            # tsconfig base
 │   ├── shared/            # tipe + schema Zod + kontrak IPC
 │   ├── action-engine/     # registry, port, executor action
+│   ├── obs-integration/   # klien OBS WebSocket v5 + sinkronisasi status
 │   └── database/          # schema Drizzle, migrasi, repository
 ├── docs/                  # catatan keputusan arsitektur
 └── pnpm-workspace.yaml
@@ -94,6 +100,7 @@ condeck/
 - Action System memakai `shell.openPath`/`shell.openExternal` tanpa shell, hanya menerima path absolut dan URL http(s).
 - Navigasi dan `window.open` dibatasi; `webview` diblokir.
 - CSP ketat disuntikkan ke HTML hasil build (dev server dikecualikan karena kebutuhan HMR).
+- Password OBS disimpan lewat Electron `safeStorage`; database hanya menyimpan referensi ciphertext. Sistem tanpa credential store aman (mis. Linux tanpa keyring) ditolak saat menyimpan password.
 - Logger meredaksi field `password`, `secret`, `token`, `credential`, `hash`.
 
 ## Database

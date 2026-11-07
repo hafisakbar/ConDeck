@@ -23,10 +23,12 @@ Dokumen sumber tetap menjadi acuan utama; file ini hanya mencatat keputusan impl
 **Resolusi:** urutan pengerjaan mengikuti DEVELOPMENT_ROADMAP (prioritas 6 — acuan urutan). Phase 1 tetap memuat Dashboard + navigasi (sesuai PRD), tetapi isinya dibatasi pada data nyata yang sudah tersedia: status aplikasi, profil aktif, jumlah deck, jumlah perangkat, status OBS, dan activity log. Komponen deck/button editor menyusul di Phase 2.
 **Dampak:** tidak ada; kedua dokumen tetap terpenuhi untuk Phase 1.
 
-### 1.3 Status OBS sebelum Phase 4
+### 1.3 Status OBS
 
-PRD mensyaratkan status OBS berdasarkan koneksi aktual. Sebelum integrasi OBS ada, status diturunkan dari tabel `integrations`:
-`NOT_CONFIGURED` (belum ada baris), `DISABLED` (integrasi dinonaktifkan), `DISCONNECTED` (terkonfigurasi tapi belum tersambung). Tidak ada state "CONNECTED" palsu sebelum Phase 4.
+PRD mensyaratkan status OBS berdasarkan koneksi aktual. Sebelum Phase 4, status diturunkan dari tabel `integrations`:
+`NOT_CONFIGURED` (belum ada baris), `DISABLED` (integrasi dinonaktifkan), `DISCONNECTED` (terkonfigurasi tapi belum tersambung) — tidak pernah ada `CONNECTED` palsu.
+
+Sejak Phase 4, `CONNECTED` hanya dilaporkan ketika klien OBS WebSocket benar-benar terhubung, dan status lain tetap memakai aturan di atas sebagai fallback.
 
 ---
 
@@ -36,6 +38,8 @@ PRD mensyaratkan status OBS berdasarkan koneksi aktual. Sebelum integrasi OBS ad
 
 Dibuat sekarang: `packages/shared`, `packages/database`, `packages/config`.
 `packages/action-engine`, `packages/obs-integration`, `packages/websocket-protocol` **sengaja belum dibuat** karena implementasinya adalah isi Phase 3–5. Membuatnya sekarang hanya akan menghasilkan stub kosong yang melanggar aturan "jangan membuat mock implementation".
+
+Status terkini: `action-engine` dibuat di Phase 3 dan `obs-integration` di Phase 4; `websocket-protocol` menyusul di Phase 5.
 
 Konsekuensi: struktur folder final tetap sesuai TECHNICAL_SPECIFICATION §4, hanya bertambah saat phase terkait dikerjakan.
 
@@ -99,7 +103,7 @@ Button editor Phase 2 hanya menyimpan label, ikon, warna, status aktif, dan posi
 
 `packages/action-engine` berisi registry, executor dan antarmuka port (`ObsPort`, `SystemPort`, `NavigationPort`). Engine tidak meng-import Electron, database, maupun jaringan; efek samping selalu lewat port yang disuntikkan main process. Konsekuensi: handler action dapat diuji tanpa Electron, dan implementasi OBS di Phase 4 cukup mengganti `ObsPort`.
 
-Sebelum Phase 4, `ObsPort` selalu melaporkan `OBS_DISCONNECTED`. Action OBS tetap dapat dikonfigurasi dan divalidasi, tetapi eksekusinya gagal dengan pesan jelas — bukan sukses palsu (sesuai aturan "jangan membuat mock implementation").
+Di Phase 3, `ObsPort` selalu melaporkan `OBS_DISCONNECTED`. Action OBS tetap dapat dikonfigurasi dan divalidasi, tetapi eksekusinya gagal dengan pesan jelas — bukan sukses palsu (sesuai aturan "jangan membuat mock implementation"). Phase 4 mengganti implementasi port itu dengan klien OBS sungguhan tanpa mengubah engine atau handler action.
 
 ### ADR-015 — Satu action per tombol di Phase 3
 
@@ -125,12 +129,47 @@ Halaman aktif dimiliki renderer, sehingga action `NAV_NEXT_PAGE`/`NAV_PREV_PAGE`
 
 `actions:set`, `actions:delete`, dan `actions:execute` menulis activity log (`ACTION_CONFIGURED`, `ACTION_REMOVED`, `ACTION_EXECUTED`, `ACTION_FAILED`). Log memuat button id, action type, status dan durasi, tanpa konfigurasi sensitif, sehingga halaman Activity Logs langsung berguna untuk menelusuri action yang gagal.
 
+### ADR-020 — Klien OBS sebagai package dengan socket yang disuntikkan
+
+`packages/obs-integration` membungkus `obs-websocket-js` v5, tetapi seluruh logika koneksi dan sinkronisasi status hanya berbicara pada antarmuka `ObsSocket` (connect/disconnect/call/event). Adapter nyata (`createObsSocket`) hanya berisi pemetaan tipe; test memakai socket palsu sehingga tidak ada koneksi jaringan saat `pnpm test`.
+
+Alasan: keputusan dan penanganan error OBS bisa diuji, dan main process tetap pemilik satu-satunya koneksi. Paket ini di-bundle Vite ke main process, jadi aplikasi tidak bergantung pada `node_modules` saat runtime.
+
+### ADR-021 — Password OBS lewat safeStorage, bukan kolom plaintext
+
+Pengaturan OBS disimpan pada satu baris `integrations` (provider `obs`): host, port, `is_enabled`, dan `credential_reference`. Password dienkripsi `safeStorage.encryptString` lalu disimpan sebagai `safeStorage:v1:<base64>` di `credential_reference`; database tidak pernah memuat password asli. API pengaturan membedakan tiga arti: `password` tidak dikirim = pertahankan yang tersimpan, string kosong = hapus, string lain = ganti.
+
+Jika OS tidak menyediakan credential store aman (Electron melaporkan backend `basic_text`, mis. Linux tanpa keyring), penyimpanan password ditolak dengan pesan jelas; menyimpan host/port tanpa password tetap diizinkan.
+
+### ADR-022 — Status OBS didorong sebagai event, bukan polling
+
+Main process mengirim snapshot `obs:status` setiap kali state berubah (connect/disconnect, scene berubah, stream/record mulai atau berhenti, input mute berubah, koneksi OBS terputus). Renderer hanya berlangganan lewat preload (`onObsStatus`) dan tidak pernah polling ke OBS. Sumber kebenaran adalah event OBS, bukan nilai yang baru saja dikirim ConDeck: perintah yang gagal tidak mengubah status.
+
+`ObsSnapshot` memuat state koneksi, host/port tersimpan, `hasPassword`, scene aktif, daftar scene, status streaming dan recording. Dashboard dan halaman Integrations membaca snapshot yang sama.
+
+### ADR-023 — Test connection memakai klien sementara
+
+Tombol **Test connection** membuat klien OBS sekali pakai dari nilai form (tanpa menyimpannya), menghubungkan, membaca daftar scene, lalu memutus koneksi. Koneksi aktif tidak terganggu dan database tidak berubah. Kegagalan dikembalikan sebagai data `{ ok: false, message }` agar form bisa menampilkannya tanpa dianggap error IPC.
+
+### ADR-024 — Timeout dan pemetaan error OBS
+
+Koneksi dibatasi 8 detik dan setiap request OBS 10 detik (selaras dengan timeout Action Engine). Error OBS dipetakan ke pesan yang bisa ditindaklanjuti: kode 4009 (authentication failed) menjadi "OBS menolak password", kegagalan jaringan menjadi "tidak bisa menghubungi OBS di host:port", dan request yang gagal menjadi `OBS_REQUEST_FAILED` dengan pesan OBS.
+
+Konsekuensi: request yang timeout dilaporkan `ACTION_TIMEOUT`/gagal, tetapi promise `obs-websocket-js` yang mendasarinya tidak dapat dibatalkan (dicatat di §3).
+
+### ADR-025 — Editor action memakai daftar scene dari OBS
+
+Field `sceneName` pada action Switch scene ditampilkan sebagai dropdown berisi scene dari snapshot OBS ketika OBS terhubung; nilai yang sudah tersimpan tetap muncul walau scene tersebut sudah tidak ada, supaya konfigurasi lama tidak hilang diam-diam. Saat OBS tidak terhubung, field tetap berupa input teks dan action tetap bisa disimpan — validasi nama scene sebenarnya dilakukan OBS saat eksekusi.
+
 ---
 
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
 
 1. Binding native Electron belum diverifikasi di lingkungan build saat ini (Linux tanpa GUI, target Windows). Aplikasi Electron belum dijalankan dan dilihat secara visual.
-2. Klien OBS WebSocket (Phase 4), remote server, device authentication, dan QR pairing (Phase 5) belum diimplementasikan. Selama itu action OBS selalu gagal dengan `OBS_DISCONNECTED`.
+2. Remote server, device authentication, dan QR pairing (Phase 5) belum diimplementasikan.
 3. Multi-action per tombol, drag & drop, custom image, soundboard dan macro belum ada (roadmap v1.1).
-4. Action yang melewati batas waktu tidak dapat dibatalkan: hasilnya dilaporkan `ACTION_TIMEOUT`, tetapi promise handler yang mendasari tetap berjalan sampai selesai. Pembatalan sungguhan perlu AbortSignal saat port OBS dibuat di Phase 4.
-5. Belum ada electron-builder config/installer (Phase 6).
+4. Action yang melewati batas waktu tidak dapat dibatalkan: hasilnya dilaporkan `ACTION_TIMEOUT`, tetapi promise handler (termasuk request OBS) tetap berjalan sampai selesai. Pembatalan sungguhan perlu AbortSignal di `ObsPort`.
+5. ConDeck tidak melakukan auto-reconnect: bila OBS ditutup atau WebSocket-nya dimatikan, status berubah ke `DISCONNECTED` dan pengguna perlu menekan Connect lagi.
+6. Koneksi OBS hanya memakai `ws://` (LAN/localhost). `wss://` dengan sertifikat kustom belum didukung.
+7. Nama audio input untuk action mute masih diketik manual; daftar input audio dari OBS belum ditampilkan karena roadmap Phase 4 hanya mensyaratkan daftar scene.
+8. Belum ada electron-builder config/installer (Phase 6).

@@ -9,6 +9,7 @@ export default defineConfig({
       '@condeck/shared': fromRoot('./packages/shared/src/index.ts'),
       '@condeck/database': fromRoot('./packages/database/src/index.ts'),
       '@condeck/action-engine': fromRoot('./packages/action-engine/src/index.ts'),
+      '@condeck/obs-integration': fromRoot('./packages/obs-integration/src/index.ts'),
     },
   },
   test: {
