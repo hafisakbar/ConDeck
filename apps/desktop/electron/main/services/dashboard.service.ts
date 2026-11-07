@@ -13,12 +13,14 @@ export interface DashboardContext {
   db: ConDeckDb;
   appInfo: AppInfo;
   activityLimit?: number;
+  /** Live OBS state provider; falls back to the stored configuration. */
+  obsStatus?: () => ObsStatus;
 }
 
 /**
- * OBS status is derived from the integrations table, never hard-coded.
- * The live OBS client arrives in Phase 4; until then a configured integration
- * reports DISCONNECTED instead of pretending to be connected.
+ * Fallback OBS status derived from the integrations table, used before the OBS
+ * service exists (tests) or when no live provider is injected. A configured
+ * integration never claims to be connected on its own.
  */
 function resolveObsStatus(db: ConDeckDb): ObsStatus {
   const integration = getIntegrationByProvider(db, 'obs');
@@ -31,7 +33,12 @@ function resolveObsStatus(db: ConDeckDb): ObsStatus {
   return { state: 'DISCONNECTED', message: 'OBS is configured but not connected.' };
 }
 
-export function buildDashboardSummary({ db, appInfo, activityLimit = 8 }: DashboardContext): DashboardSummary {
+export function buildDashboardSummary({
+  db,
+  appInfo,
+  activityLimit = 8,
+  obsStatus,
+}: DashboardContext): DashboardSummary {
   return {
     app: appInfo,
     profile: {
@@ -42,7 +49,7 @@ export function buildDashboardSummary({ db, appInfo, activityLimit = 8 }: Dashbo
       total: countDecks(db),
     },
     devices: countDevices(db),
-    obs: resolveObsStatus(db),
+    obs: obsStatus ? obsStatus() : resolveObsStatus(db),
     activity: listRecentActivity(db, activityLimit),
   };
 }

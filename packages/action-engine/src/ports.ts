@@ -12,9 +12,9 @@ export interface ActionContext {
 }
 
 /**
- * OBS operations. Phase 4 supplies the obs-websocket-js implementation; until
- * then the desktop port reports `OBS_DISCONNECTED` instead of pretending to
- * work (see docs/DECISIONS.md ADR-014).
+ * OBS operations. The desktop supplies the obs-websocket-js implementation
+ * (packages/obs-integration); while OBS is not connected the port reports
+ * `OBS_DISCONNECTED` instead of pretending to work (ADR-014, ADR-020).
  */
 export interface ObsPort {
   isConnected(): boolean;

@@ -7,11 +7,14 @@ import { FileLogger } from './logger';
 import { createActionPorts } from './services/action-ports';
 import { createActionService } from './services/action.service';
 import { closeDatabase, getDatabasePath, initDatabase } from './services/database.service';
+import { createSafeStorageSecretStore } from './services/obs-secrets';
+import { createObsService, type ObsService } from './services/obs.service';
 import { createMainWindow } from './window';
 
 const APP_USER_MODEL_ID = 'com.condeck.app';
 
 let logger: FileLogger | null = null;
+let obsService: ObsService | null = null;
 
 function createLogger(): FileLogger {
   logger ??= new FileLogger(join(app.getPath('userData'), 'logs', 'condeck.log'));
@@ -36,12 +39,22 @@ function bootstrap(): void {
 
   const database = initDatabase(activeLogger);
 
+  const broadcast = (channel: string, payload: unknown): void => {
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.webContents.send(channel, payload);
+    }
+  };
+
+  const activeObsService = createObsService({
+    db: database.db,
+    secrets: createSafeStorageSecretStore(),
+    onChange: (snapshot) => broadcast('obs:status', snapshot),
+  });
+  obsService = activeObsService;
+
   const actionPorts = createActionPorts({
-    sendNavigation: (request) => {
-      for (const window of BrowserWindow.getAllWindows()) {
-        window.webContents.send('navigation:request', request);
-      }
-    },
+    sendNavigation: (request) => broadcast('navigation:request', request),
+    obs: activeObsService.getActionPort(),
   });
 
   registerIpcHandlers({
@@ -49,6 +62,7 @@ function bootstrap(): void {
     db: database.db,
     getAppInfo: buildAppInfo,
     actions: createActionService({ db: database.db, ports: actionPorts }),
+    obs: activeObsService,
   });
 
   recordActivity(database.db, {
@@ -109,6 +123,7 @@ if (!hasSingleInstanceLock) {
 
   app.on('before-quit', () => {
     logger?.info('ConDeck shutting down');
+    void obsService?.dispose();
     closeDatabase();
   });
 }

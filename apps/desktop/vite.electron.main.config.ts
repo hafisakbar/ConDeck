@@ -9,6 +9,9 @@ const databaseEntry = fileURLToPath(new URL('../../packages/database/src/index.t
 const actionEngineEntry = fileURLToPath(
   new URL('../../packages/action-engine/src/index.ts', import.meta.url),
 );
+const obsIntegrationEntry = fileURLToPath(
+  new URL('../../packages/obs-integration/src/index.ts', import.meta.url),
+);
 
 export default defineConfig({
   resolve: {
@@ -16,6 +19,7 @@ export default defineConfig({
       '@condeck/shared': sharedEntry,
       '@condeck/database': databaseEntry,
       '@condeck/action-engine': actionEngineEntry,
+      '@condeck/obs-integration': obsIntegrationEntry,
     },
   },
   build: {

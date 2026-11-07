@@ -35,6 +35,17 @@ import {
   updateProfileInputSchema,
 } from './domain';
 import type { AppInfo, Profile, Device, ActivityLog, DashboardSummary } from './domain';
+import {
+  obsTestConnectionInputSchema,
+  saveObsSettingsInputSchema,
+  type ObsSnapshot,
+  type ObsTestResult,
+  type SaveObsSettingsInput,
+} from './obs';
+
+/** Main-to-renderer events (not part of the request/response allowlist). */
+export const ipcEvents = ['navigation:request', 'obs:status'] as const;
+export type IpcEvent = (typeof ipcEvents)[number];
 
 /**
  * The complete IPC surface between Electron renderer and main process.
@@ -65,6 +76,12 @@ export const ipcChannels = [
   'actions:set',
   'actions:delete',
   'actions:execute',
+  'obs:get-snapshot',
+  'obs:save-settings',
+  'obs:connect',
+  'obs:disconnect',
+  'obs:test-connection',
+  'obs:list-scenes',
   'devices:list',
   'activity:list',
 ] as const;
@@ -95,6 +112,12 @@ export const ipcInputSchemas = {
   'actions:set': setActionInputSchema,
   'actions:delete': deleteActionInputSchema,
   'actions:execute': executeActionInputSchema,
+  'obs:get-snapshot': z.void(),
+  'obs:save-settings': saveObsSettingsInputSchema,
+  'obs:connect': z.void(),
+  'obs:disconnect': z.void(),
+  'obs:test-connection': obsTestConnectionInputSchema,
+  'obs:list-scenes': z.void(),
   'devices:list': z.void(),
   'activity:list': listActivityInputSchema,
 } as const satisfies Record<IpcChannel, z.ZodType>;
@@ -211,6 +234,15 @@ export interface ConDeckBridge {
   executeAction(input: { buttonId: string }): Promise<IpcResult<ActionExecutionResult>>;
   /** Subscribes to navigation actions; returns the unsubscribe function. */
   onNavigationRequest(listener: (request: NavigationRequest) => void): () => void;
+
+  getObsSnapshot(): Promise<IpcResult<ObsSnapshot>>;
+  saveObsSettings(input: SaveObsSettingsInput): Promise<IpcResult<ObsSnapshot>>;
+  connectObs(): Promise<IpcResult<ObsSnapshot>>;
+  disconnectObs(): Promise<IpcResult<ObsSnapshot>>;
+  testObsConnection(input: SaveObsSettingsInput): Promise<IpcResult<ObsTestResult>>;
+  listObsScenes(): Promise<IpcResult<string[]>>;
+  /** Subscribes to live OBS status pushes; returns the unsubscribe function. */
+  onObsStatus(listener: (snapshot: ObsSnapshot) => void): () => void;
 
   listDevices(): Promise<IpcResult<Device[]>>;
   listActivity(input?: { limit?: number }): Promise<IpcResult<ActivityLog[]>>;
