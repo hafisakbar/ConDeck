@@ -12,7 +12,7 @@ function requireObs(ports: ActionPorts): void {
   if (!ports.obs.isConnected()) {
     throw new AppError(
       'OBS_DISCONNECTED',
-      'OBS is not connected. Live OBS control arrives with the Phase 4 integration.',
+      'OBS is not connected. Open Integrations, connect to OBS Studio, then try again.',
     );
   }
 }
