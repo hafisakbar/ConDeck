@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import {
   ipcChannels,
   navigationRequestSchema,
+  obsSnapshotSchema,
   type ActionCatalogEntry,
   type ActionExecutionResult,
   type ActionRecord,
@@ -19,7 +20,10 @@ import {
   type IpcChannel,
   type IpcFailure,
   type IpcResult,
+  type ObsSnapshot,
+  type ObsTestResult,
   type Profile,
+  type SaveObsSettingsInput,
 } from '@condeck/shared';
 
 const allowedChannels = new Set<string>(ipcChannels);
@@ -81,6 +85,29 @@ const bridge: ConDeckBridge = {
     ipcRenderer.on('navigation:request', handler);
     return () => {
       ipcRenderer.removeListener('navigation:request', handler);
+    };
+  },
+
+  getObsSnapshot: () => invoke<ObsSnapshot>('obs:get-snapshot'),
+  saveObsSettings: (input: SaveObsSettingsInput) =>
+    invoke<ObsSnapshot>('obs:save-settings', input),
+  connectObs: () => invoke<ObsSnapshot>('obs:connect'),
+  disconnectObs: () => invoke<ObsSnapshot>('obs:disconnect'),
+  testObsConnection: (input: SaveObsSettingsInput) =>
+    invoke<ObsTestResult>('obs:test-connection', input),
+  listObsScenes: () => invoke<string[]>('obs:list-scenes'),
+
+  onObsStatus(listener) {
+    const handler = (_event: IpcRendererEvent, payload: unknown): void => {
+      const parsed = obsSnapshotSchema.safeParse(payload);
+      if (parsed.success) {
+        listener(parsed.data);
+      }
+    };
+
+    ipcRenderer.on('obs:status', handler);
+    return () => {
+      ipcRenderer.removeListener('obs:status', handler);
     };
   },
 

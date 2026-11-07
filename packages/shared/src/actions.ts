@@ -109,7 +109,7 @@ export interface ActionCatalogEntry {
   category: ActionCategory;
   label: string;
   description: string;
-  /** OBS actions need the Phase 4 WebSocket client before they can run. */
+  /** OBS actions need a live OBS WebSocket connection to run. */
   requiresObs: boolean;
   fields: ActionConfigField[];
 }

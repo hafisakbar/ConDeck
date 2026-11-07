@@ -9,6 +9,7 @@ import { CheckCircle2, Loader2, Play, Save, TriangleAlert, Trash2 } from 'lucide
 import { useEffect, useState } from 'react';
 import { cn } from '../../lib/cn';
 import type { ExecutionState } from '../../stores/deck-store';
+import { useObsStore } from '../../stores/obs-store';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -42,6 +43,8 @@ export function ActionEditor({
   const [actionType, setActionType] = useState<ActionType | ''>(button.action?.actionType ?? '');
   const [config, setConfig] = useState<Record<string, unknown>>(button.action?.config ?? {});
   const [error, setError] = useState<string | null>(null);
+  const obsState = useObsStore((state) => state.snapshot?.state ?? null);
+  const obsScenes = useObsStore((state) => state.snapshot?.scenes ?? []);
 
   useEffect(() => {
     setActionType(button.action?.actionType ?? '');
@@ -125,7 +128,31 @@ export function ActionEditor({
           <p className="text-[11px] leading-relaxed text-content-subtle">{entry.description}</p>
 
           {entry.fields.map((field) =>
-            field.type === 'boolean' ? (
+            entry.type === 'OBS_SWITCH_SCENE' && field.key === 'sceneName' ? (
+              <Select
+                key={field.key}
+                label={field.label}
+                hint={
+                  obsScenes.length > 0
+                    ? field.help
+                    : 'Connect to OBS in Integrations to pick a scene from a list.'
+                }
+                value={typeof config[field.key] === 'string' ? (config[field.key] as string) : ''}
+                onChange={(event) => handleFieldChange(field.key, event.target.value)}
+              >
+                <option value="">Choose a scene…</option>
+                {obsScenes.map((scene) => (
+                  <option key={scene} value={scene}>
+                    {scene}
+                  </option>
+                ))}
+                {typeof config[field.key] === 'string' &&
+                (config[field.key] as string).length > 0 &&
+                !obsScenes.includes(config[field.key] as string) ? (
+                  <option value={config[field.key] as string}>{config[field.key] as string}</option>
+                ) : null}
+              </Select>
+            ) : field.type === 'boolean' ? (
               <Toggle
                 key={field.key}
                 label={field.label}
@@ -147,8 +174,9 @@ export function ActionEditor({
 
           {entry.requiresObs ? (
             <p className="rounded-control border border-border-subtle bg-surface-raised px-2.5 py-2 text-[11px] leading-relaxed text-content-subtle">
-              OBS actions are validated now, but they only run once the OBS WebSocket connection
-              lands in Phase 4. Until then pressing the button reports “OBS is not connected”.
+              {obsState === 'CONNECTED'
+                ? 'OBS is connected. This action runs through the connection configured in Integrations.'
+                : 'OBS is not connected. The action still saves, but pressing the button reports the connection error until you connect in Integrations.'}
             </p>
           ) : null}
         </>

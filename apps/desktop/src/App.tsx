@@ -14,6 +14,7 @@ import { ProfilesPage } from './pages/ProfilesPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { useAppStore } from './stores/app-store';
 import { useNavigationStore } from './stores/navigation-store';
+import { useObsStore } from './stores/obs-store';
 
 const viewComponents: Record<ViewId, ComponentType> = {
   dashboard: DashboardPage,
@@ -29,11 +30,16 @@ export default function App() {
   const status = useAppStore((state) => state.status);
   const error = useAppStore((state) => state.error);
   const refresh = useAppStore((state) => state.refresh);
+  const initializeObs = useObsStore((state) => state.initialize);
   const view = useNavigationStore((state) => state.view);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  useEffect(() => {
+    void initializeObs();
+  }, [initializeObs]);
 
   if (status === 'loading') {
     return <BootScreen />;

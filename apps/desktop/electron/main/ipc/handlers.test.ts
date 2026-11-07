@@ -15,6 +15,7 @@ import {
   type DeckDetail,
   type IpcResult,
   type NavigationRequest,
+  type ObsSnapshot,
   type Profile,
 } from '@condeck/shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -36,6 +37,7 @@ vi.mock('electron', () => ({
 const { registerIpcHandlers } = await import('./handlers');
 const { FileLogger } = await import('../logger');
 const { createActionService } = await import('../services/action.service');
+type ObsService = import('../services/obs.service').ObsService;
 
 const appInfo: AppInfo = {
   name: 'ConDeck',
@@ -51,6 +53,7 @@ let database: ConDeckDatabase;
 let invoke: (channel: string, payload?: unknown) => Promise<IpcResult<unknown>>;
 let navigationRequests: NavigationRequest[];
 let actionPorts: ActionPorts;
+let obsService: ObsService;
 
 beforeEach(() => {
   registeredHandlers.clear();
@@ -83,11 +86,48 @@ beforeEach(() => {
     },
   };
 
+  const baseSnapshot: ObsSnapshot = {
+    state: 'NOT_CONFIGURED',
+    message: null,
+    host: null,
+    port: null,
+    isEnabled: false,
+    hasPassword: false,
+    sceneName: null,
+    scenes: [],
+    isStreaming: false,
+    isRecording: false,
+  };
+
+  obsService = {
+    getSnapshot: () => baseSnapshot,
+    saveSettings: vi.fn((input) => ({
+      ...baseSnapshot,
+      state: 'DISCONNECTED' as const,
+      host: input.host,
+      port: input.port,
+      isEnabled: input.isEnabled,
+      hasPassword: input.password !== undefined && input.password !== '',
+    })),
+    connect: vi.fn(async () => ({ ...baseSnapshot, state: 'CONNECTED' as const })),
+    disconnect: vi.fn(async () => ({ ...baseSnapshot, state: 'DISCONNECTED' as const })),
+    testConnection: vi.fn(async () => ({
+      ok: true,
+      message: 'Connected to OBS at 127.0.0.1:4455.',
+      scenes: ['Main'],
+    })),
+    listScenes: vi.fn(async () => ['Main', 'Starting soon']),
+    getStatus: () => ({ state: 'NOT_CONFIGURED' as const, message: null }),
+    getActionPort: () => actionPorts.obs,
+    dispose: vi.fn(async () => undefined),
+  };
+
   registerIpcHandlers({
     logger: new FileLogger(join(workDir, 'logs', 'condeck.log')),
     db: database.db,
     getAppInfo: () => appInfo,
     actions: createActionService({ db: database.db, ports: actionPorts }),
+    obs: obsService,
   });
 
   invoke = (channel, payload) => {
@@ -434,5 +474,93 @@ describe('action engine channels', () => {
       const logs = result.data as Array<{ eventType: string }>;
       expect(logs.map((entry) => entry.eventType)).toContain('ACTION_EXECUTED');
     }
+  });
+});
+
+describe('OBS channels', () => {
+  it('returns the saved configuration and live state', async () => {
+    const result = await invoke('obs:get-snapshot');
+
+    expect(result).toEqual({
+      ok: true,
+      data: expect.objectContaining({ state: 'NOT_CONFIGURED', scenes: [] }),
+    });
+  });
+
+  it('saves settings and records the change in the activity feed', async () => {
+    const result = await invoke('obs:save-settings', {
+      host: '192.168.1.20',
+      port: 4455,
+      isEnabled: true,
+      password: 'secret',
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      data: { host: '192.168.1.20', port: 4455, hasPassword: true },
+    });
+    expect(obsService.saveSettings).toHaveBeenCalledWith({
+      host: '192.168.1.20',
+      port: 4455,
+      isEnabled: true,
+      password: 'secret',
+    });
+
+    const activity = await invoke('activity:list', { limit: 10 });
+    const logs = activity.ok ? (activity.data as Array<{ eventType: string }>) : [];
+    expect(logs.some((log) => log.eventType === 'OBS_SETTINGS_SAVED')).toBe(true);
+  });
+
+  it('rejects an out-of-range port before touching the service', async () => {
+    const result = await invoke('obs:save-settings', {
+      host: '127.0.0.1',
+      port: 70000,
+      isEnabled: true,
+    });
+
+    expect(result).toMatchObject({ ok: false, error: { code: 'INVALID_INPUT' } });
+    expect(obsService.saveSettings).not.toHaveBeenCalled();
+  });
+
+  it('reports a refused connection as a failure and logs it', async () => {
+    obsService.connect = vi.fn(async () => {
+      throw new AppError('OBS_CONNECTION_FAILED', 'Could not connect to OBS at 127.0.0.1:4455.');
+    });
+
+    const result = await invoke('obs:connect');
+
+    expect(result).toMatchObject({ ok: false, error: { code: 'NOT_AVAILABLE' } });
+    const activity = await invoke('activity:list', { limit: 10 });
+    const logs = activity.ok ? (activity.data as Array<{ eventType: string }>) : [];
+    expect(logs.some((log) => log.eventType === 'OBS_CONNECTION_FAILED')).toBe(true);
+  });
+
+  it('connects and disconnects through the OBS service', async () => {
+    const connected = await invoke('obs:connect');
+    const disconnected = await invoke('obs:disconnect');
+
+    expect(connected).toMatchObject({ ok: true, data: { state: 'CONNECTED' } });
+    expect(disconnected).toMatchObject({ ok: true, data: { state: 'DISCONNECTED' } });
+  });
+
+  it('probes the address from the form without saving it', async () => {
+    const result = await invoke('obs:test-connection', {
+      host: '10.0.0.5',
+      port: 4460,
+      isEnabled: true,
+    });
+
+    expect(result).toMatchObject({ ok: true, data: { ok: true, scenes: ['Main'] } });
+    expect(obsService.testConnection).toHaveBeenCalledWith({
+      host: '10.0.0.5',
+      port: 4460,
+      isEnabled: true,
+    });
+  });
+
+  it('lists the scenes for the action editor', async () => {
+    const result = await invoke('obs:list-scenes');
+
+    expect(result).toEqual({ ok: true, data: ['Main', 'Starting soon'] });
   });
 });

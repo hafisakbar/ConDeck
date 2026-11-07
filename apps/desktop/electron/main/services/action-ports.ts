@@ -2,31 +2,6 @@ import type { ActionPorts, NavigationPort, ObsPort, SystemPort } from '@condeck/
 import { AppError, type NavigationRequest } from '@condeck/shared';
 import { shell } from 'electron';
 
-const OBS_UNAVAILABLE =
-  'OBS is not connected. Live OBS control arrives with the Phase 4 integration.';
-
-/**
- * Phase 3 has no OBS WebSocket client yet. Every OBS operation fails with
- * OBS_DISCONNECTED instead of reporting a fake success, and the UI shows that
- * message on the button.
- */
-function createObsPort(): ObsPort {
-  const unavailable = async (): Promise<never> => {
-    throw new AppError('OBS_DISCONNECTED', OBS_UNAVAILABLE);
-  };
-
-  return {
-    isConnected: () => false,
-    switchScene: unavailable,
-    startStreaming: unavailable,
-    stopStreaming: unavailable,
-    startRecording: unavailable,
-    stopRecording: unavailable,
-    getInputMute: unavailable,
-    setInputMute: unavailable,
-  };
-}
-
 /**
  * Opens a path or a URL with the OS default handler. No shell is involved, so a
  * stored value can never turn into an arbitrary command with extra arguments.
@@ -65,11 +40,13 @@ function createNavigationPort(
 
 export interface ActionPortsOptions {
   sendNavigation: (request: NavigationRequest) => void;
+  /** Live OBS connection owned by the OBS service. */
+  obs: ObsPort;
 }
 
-export function createActionPorts({ sendNavigation }: ActionPortsOptions): ActionPorts {
+export function createActionPorts({ sendNavigation, obs }: ActionPortsOptions): ActionPorts {
   return {
-    obs: createObsPort(),
+    obs,
     system: createSystemPort(),
     navigation: createNavigationPort(sendNavigation),
   };

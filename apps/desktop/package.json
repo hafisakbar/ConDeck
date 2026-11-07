@@ -17,6 +17,7 @@
   "dependencies": {
     "@condeck/action-engine": "workspace:*",
     "@condeck/database": "workspace:*",
+    "@condeck/obs-integration": "workspace:*",
     "@condeck/shared": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "drizzle-orm": "^0.45.4",
