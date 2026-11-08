@@ -6,16 +6,16 @@ Virtual Stream Deck untuk OBS Studio. **ConDeck Desktop** (Electron) menjadi hos
 
 ## Status Implementasi
 
-Pengembangan mengikuti `DEVELOPMENT_ROADMAP.md`, satu phase per iterasi.
+Pengembangan mengikuti `DEVELOPMENT_ROADMAP.md`, satu phase per iterasi. Kita bisa
 
-| Phase | Cakupan | Status |
-|---|---|---|
-| 1 — Foundation | Monorepo, Electron, React, Tailwind, SQLite + Drizzle, preload aman, IPC, dashboard, navigasi | ✅ Selesai |
-| 2 — Deck Builder | Deck, page, button grid, button editor, icon & colour customization, profile edit/delete | ✅ Selesai |
-| 3 — Action Engine | Action registry, validasi, eksekusi, feedback | ✅ Selesai |
-| 4 — OBS Integration | OBS WebSocket v5, scene/stream/record/audio | ✅ Selesai |
-| 5 — Mobile Remote | PWA, WebSocket server, QR pairing, device auth | ✅ Selesai |
-| 6 — Testing & Release | E2E, security, installer Windows | ⏳ Belum |
+| Phase                 | Cakupan                                                                                       | Status     |
+| --------------------- | --------------------------------------------------------------------------------------------- | ---------- |
+| 1 — Foundation        | Monorepo, Electron, React, Tailwind, SQLite + Drizzle, preload aman, IPC, dashboard, navigasi | ✅ Selesai |
+| 2 — Deck Builder      | Deck, page, button grid, button editor, icon & colour customization, profile edit/delete      | ✅ Selesai |
+| 3 — Action Engine     | Action registry, validasi, eksekusi, feedback                                                 | ✅ Selesai |
+| 4 — OBS Integration   | OBS WebSocket v5, scene/stream/record/audio                                                   | ✅ Selesai |
+| 5 — Mobile Remote     | PWA, WebSocket server, QR pairing, device auth                                                | ✅ Selesai |
+| 6 — Testing & Release | E2E, security, installer Windows                                                              | ⏳ Belum   |
 
 Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit, bukan data palsu.
 
@@ -67,15 +67,15 @@ pnpm dev
 
 ## Perintah
 
-| Perintah | Fungsi |
-|---|---|
-| `pnpm dev` | Jalankan ConDeck Desktop (development) |
-| `pnpm dev:mobile` | Jalankan ConDeck Mobile (Vite, port 5274) untuk pengembangan UI remote |
-| `pnpm build` | Build produksi renderer + Electron main/preload |
-| `pnpm typecheck` | TypeScript check seluruh workspace |
-| `pnpm lint` | ESLint |
-| `pnpm test` | Vitest (unit + integration, tanpa GUI) |
-| `pnpm db:generate` | Generate migrasi SQL Drizzle setelah mengubah `schema.ts` |
+| Perintah           | Fungsi                                                                 |
+| ------------------ | ---------------------------------------------------------------------- |
+| `pnpm dev`         | Jalankan ConDeck Desktop (development)                                 |
+| `pnpm dev:mobile`  | Jalankan ConDeck Mobile (Vite, port 5274) untuk pengembangan UI remote |
+| `pnpm build`       | Build produksi renderer + Electron main/preload                        |
+| `pnpm typecheck`   | TypeScript check seluruh workspace                                     |
+| `pnpm lint`        | ESLint                                                                 |
+| `pnpm test`        | Vitest (unit + integration, tanpa GUI)                                 |
+| `pnpm db:generate` | Generate migrasi SQL Drizzle setelah mengubah `schema.ts`              |
 
 ## Remote di HP
 
