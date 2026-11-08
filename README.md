@@ -86,7 +86,9 @@ pnpm dev
 
 Catatan:
 
-- Windows Firewall harus mengizinkan port remote (default 43821) untuk jaringan privat; tanpa itu HP tidak dapat membuka halaman.
+- Alamat yang dipakai QR adalah alamat LAN terbaik yang ditemukan (Wi-Fi/Ethernet diutamakan). Adapter virtual seperti VirtualBox, Hyper-V, WSL, atau VPN juga muncul di daftar alamat tetapi tidak bisa dijangkau HP — coba alamat berikutnya bila yang pertama timeout.
+- Windows Firewall harus mengizinkan port remote (default 43821) untuk jaringan privat; tanpa itu HP tidak dapat membuka halaman. Jika jaringan Wi-Fi dikenali sebagai "Public", ubah profil jaringannya ke Private atau izinkan ConDeck di profil tersebut.
+- Router dengan "client isolation"/"AP isolation" memblokir komunikasi antar perangkat di Wi-Fi yang sama; matikan opsi itu bila tersedia.
 - Remote disajikan lewat HTTP biasa di LAN. Service worker dan prompt “Install app” memerlukan HTTPS, jadi tanpa itu halaman tetap berfungsi sebagai web app selama server desktop hidup — “Add to Home Screen” di iOS masih bisa, tetapi mode offline tidak.
 - `pnpm dev:mobile` hanya untuk mengembangkan UI remote: buka di browser, lalu isi alamat desktop dan pairing code secara manual.
 - Mencabut perangkat dari desktop langsung memutus koneksinya; HP berhenti mencoba dan diminta pairing ulang.
