@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { networkInterfaces } from 'node:os';
 import {
   createDevice,
   endDeviceSession,
@@ -34,6 +33,7 @@ import {
 } from '@condeck/websocket-protocol';
 import { WebSocketServer, WebSocket } from 'ws';
 import { createDeviceCredential, verifyCredential } from './remote/credentials';
+import { listLanAddresses } from './remote/lan-addresses';
 import { createPairingManager } from './remote/pairing';
 import { toObsStatusPayload, toRemoteDeckSnapshot } from './remote/snapshot';
 import {
@@ -107,19 +107,6 @@ interface ClientState {
 
 function logSafely(logger: RemoteServerLogger | undefined, message: string, meta: Record<string, unknown>): void {
   logger?.info(message, meta);
-}
-
-/** Non-internal IPv4 addresses, so the QR code points at something a phone can reach. */
-export function listLanAddresses(port: number): string[] {
-  const urls: string[] = [];
-  for (const addresses of Object.values(networkInterfaces())) {
-    for (const address of addresses ?? []) {
-      if (address.family === 'IPv4' && !address.internal) {
-        urls.push(`http://${address.address}:${port}`);
-      }
-    }
-  }
-  return urls;
 }
 
 export function createRemoteServer(options: RemoteServerOptions): RemoteServer {

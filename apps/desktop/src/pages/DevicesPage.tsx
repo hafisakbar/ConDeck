@@ -62,6 +62,7 @@ export function DevicesPage() {
   const [syncedKey, setSyncedKey] = useState<string | null>(null);
   const [pendingRevoke, setPendingRevoke] = useState<Device | null>(null);
   const [copied, setCopied] = useState(false);
+  const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
   const now = useNow();
 
   useEffect(() => {
@@ -92,6 +93,16 @@ export function DevicesPage() {
     const saved = await saveSettings({ port: Number.isFinite(parsed) ? parsed : remoteDefaultPort, isEnabled: enabled });
     if (saved) {
       await refresh();
+    }
+  }
+
+  async function copyAddress(address: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopiedAddress(address);
+      setTimeout(() => setCopiedAddress(null), 1_500);
+    } catch {
+      setCopiedAddress(null);
     }
   }
 
@@ -205,13 +216,31 @@ export function DevicesPage() {
                 Open on your phone
               </div>
               {server && server.addresses.length > 0 ? (
-                <ul className="mt-2 space-y-1">
-                  {server.addresses.map((address) => (
-                    <li key={address} className="font-mono text-xs text-content">
-                      {address}
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  <ul className="mt-2 space-y-1.5">
+                    {server.addresses.map((address, index) => (
+                      <li key={address} className="flex items-center justify-between gap-2">
+                        <span className="min-w-0 truncate font-mono text-xs text-content">{address}</span>
+                        <span className="flex shrink-0 items-center gap-1">
+                          {index === 0 ? <Badge tone="accent">Try first</Badge> : null}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            icon={<Copy className="size-3.5" aria-hidden />}
+                            onClick={() => void copyAddress(address)}
+                          >
+                            {copiedAddress === address ? 'Copied' : 'Copy'}
+                          </Button>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-[11px] leading-relaxed text-content-subtle">
+                    The pairing code uses the first address. If the phone times out, try the next
+                    one: adapters such as VirtualBox, Hyper-V or a VPN appear in this list but a
+                    phone cannot reach them.
+                  </p>
+                </>
               ) : (
                 <p className="mt-2 text-[11px] leading-relaxed text-content-subtle">
                   {running
@@ -220,8 +249,9 @@ export function DevicesPage() {
                 </p>
               )}
               <p className="mt-3 text-[11px] leading-relaxed text-content-subtle">
-                The phone must be on the same network. Plain HTTP is used on the LAN, so only pair
-                devices you trust.
+                The phone must be on the same Wi-Fi or hotspot. If the page will not open, allow
+                ConDeck through Windows Firewall for private networks and turn off client isolation
+                on the router. Plain HTTP is used on the LAN, so only pair devices you trust.
               </p>
             </div>
           </div>
