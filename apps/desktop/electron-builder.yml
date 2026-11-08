@@ -1,0 +1,43 @@
+appId: com.condeck.app
+productName: ConDeck
+copyright: Copyright © 2026 ConDeck
+
+# Output lands in <repo>/release (gitignored). The Windows build is produced by
+# `pnpm dist:win` locally or by .github/workflows/release.yml on windows-latest.
+directories:
+  output: ../../release
+  buildResources: build
+
+files:
+  - dist/**/*
+  - dist-electron/**/*
+  - package.json
+
+# The mobile PWA is served from process.resourcesPath/mobile in packaged builds.
+extraResources:
+  - from: ../mobile/dist
+    to: mobile
+
+asar: true
+compression: maximum
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.png
+  artifactName: ConDeck-${version}-${arch}.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: ConDeck
+  uninstallDisplayName: ConDeck ${version}
+  deleteAppDataOnUninstall: false
+
+npmRebuild: true
