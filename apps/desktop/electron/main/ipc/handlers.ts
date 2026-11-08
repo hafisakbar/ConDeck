@@ -65,7 +65,11 @@ import {
   type ObsTestConnectionInput,
   type ObsTestResult,
   type Profile,
+  type RemotePairing,
+  type RemoteServerStatus,
+  type RevokeDeviceInput,
   type SaveObsSettingsInput,
+  type SaveRemoteSettingsInput,
   type SetActionInput,
   type SetActiveProfileInput,
   type UpdateButtonInput,
@@ -79,6 +83,7 @@ import type { FileLogger } from '../logger';
 import type { ActionService } from '../services/action.service';
 import { buildDashboardSummary } from '../services/dashboard.service';
 import type { ObsService } from '../services/obs.service';
+import type { RemoteService } from '../services/remote.service';
 
 export interface IpcContext {
   logger: FileLogger;
@@ -86,6 +91,7 @@ export interface IpcContext {
   getAppInfo: () => AppInfo;
   actions: ActionService;
   obs: ObsService;
+  remote: RemoteService;
 }
 
 const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
@@ -110,7 +116,14 @@ const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
  * Every payload is validated with the shared Zod schema before it touches the
  * database, and failures are returned as data instead of thrown across IPC.
  */
-export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: IpcContext): void {
+export function registerIpcHandlers({
+  logger,
+  db,
+  getAppInfo,
+  actions,
+  obs,
+  remote,
+}: IpcContext): void {
   const handle = <TInput, TOutput>(
     channel: IpcChannel,
     handler: (input: TInput) => TOutput | Promise<TOutput>,
@@ -143,6 +156,9 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       }
     });
   };
+
+  /** Remotes re-request the deck snapshot whenever the desktop edits it. */
+  const deckChanged = (): void => remote.notifyDeckChanged();
 
   handle<void, AppInfo>('app:get-info', () => getAppInfo());
 
@@ -214,6 +230,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       },
     });
     logger.info('Deck created', { deckId: detail.deck.id });
+    deckChanged();
     return detail;
   });
 
@@ -224,6 +241,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Deck "${deck.name}" updated`,
       metadata: { deckId: deck.id, grid: `${deck.columns}x${deck.rows}` },
     });
+    deckChanged();
     return deck;
   });
 
@@ -235,6 +253,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Deck "${deck.name}" deleted`,
       metadata: { deckId: deck.id, profileId: deck.profileId },
     });
+    deckChanged();
     return { id: input.deckId };
   });
 
@@ -247,6 +266,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Page "${input.name}" added to deck "${detail.deck.name}"`,
       metadata: { deckId: detail.deck.id, pageName: input.name },
     });
+    deckChanged();
     return detail;
   });
 
@@ -257,6 +277,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Page renamed to "${page.name}"`,
       metadata: { pageId: page.id, deckId: page.deckId },
     });
+    deckChanged();
     return page;
   });
 
@@ -267,6 +288,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Page deleted from deck "${detail.deck.name}"`,
       metadata: { pageId: input.pageId, deckId: detail.deck.id },
     });
+    deckChanged();
     return detail;
   });
 
@@ -279,6 +301,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Button "${button.label}" created`,
       metadata: { buttonId: button.id, pageId: button.pageId, position: button.position },
     });
+    deckChanged();
     return button;
   });
 
@@ -289,6 +312,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Button "${button.label}" updated`,
       metadata: { buttonId: button.id, pageId: button.pageId, position: button.position },
     });
+    deckChanged();
     return button;
   });
 
@@ -299,6 +323,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: 'Button deleted',
       metadata: { buttonId: input.buttonId },
     });
+    deckChanged();
     return { id: input.buttonId };
   });
 
@@ -309,6 +334,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Button "${button.label}" duplicated`,
       metadata: { buttonId: button.id, pageId: button.pageId, position: button.position },
     });
+    deckChanged();
     return button;
   });
 
@@ -333,6 +359,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       buttonId: record.buttonId,
       actionType: record.actionType,
     });
+    deckChanged();
     return record;
   });
 
@@ -344,6 +371,7 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
       description: `Action "${actionTypeLabel(actionType)}" removed from button "${target.buttonLabel}"`,
       metadata: { buttonId: input.buttonId, pageId: target.pageId, actionType },
     });
+    deckChanged();
     return { id: input.buttonId };
   });
 
@@ -443,6 +471,20 @@ export function registerIpcHandlers({ logger, db, getAppInfo, actions, obs }: Ip
   // ------------------------------------------------------- devices, activity
 
   handle<void, Device[]>('devices:list', () => listDevices(db));
+
+  handle<RevokeDeviceInput, Device>('devices:revoke', (input) => remote.revokeDevice(input.deviceId));
+
+  handle<void, RemoteServerStatus>('remote:get-status', () => remote.getStatus());
+
+  handle<SaveRemoteSettingsInput, RemoteServerStatus>('remote:save-settings', (input) =>
+    remote.saveSettings(input),
+  );
+
+  handle<void, RemoteServerStatus>('remote:start', () => remote.start());
+
+  handle<void, RemoteServerStatus>('remote:stop', () => remote.stop());
+
+  handle<void, RemotePairing>('remote:create-pairing', () => remote.createPairing());
 
   handle<ListActivityInput, ActivityLog[]>('activity:list', (input) =>
     listRecentActivity(db, input.limit),

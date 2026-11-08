@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { recordActivity } from '@condeck/database';
 import type { AppInfo } from '@condeck/shared';
@@ -9,16 +10,41 @@ import { createActionService } from './services/action.service';
 import { closeDatabase, getDatabasePath, initDatabase } from './services/database.service';
 import { createSafeStorageSecretStore } from './services/obs-secrets';
 import { createObsService, type ObsService } from './services/obs.service';
+import { createRemoteService, type RemoteService } from './services/remote.service';
 import { createMainWindow } from './window';
 
 const APP_USER_MODEL_ID = 'com.condeck.app';
 
 let logger: FileLogger | null = null;
 let obsService: ObsService | null = null;
+let remoteService: RemoteService | null = null;
 
 function createLogger(): FileLogger {
   logger ??= new FileLogger(join(app.getPath('userData'), 'logs', 'condeck.log'));
   return logger;
+}
+
+/**
+ * The mobile PWA is served from its build output. Packaged builds ship it in
+ * `resources/mobile`; a development checkout uses `apps/mobile/dist`.
+ */
+function resolveMobileAssetsDir(): string | null {
+  const candidates: string[] = [];
+  if (process.env.CONDECK_MOBILE_DIR) {
+    candidates.push(process.env.CONDECK_MOBILE_DIR);
+  }
+  candidates.push(
+    app.isPackaged
+      ? join(process.resourcesPath, 'mobile')
+      : join(app.getAppPath(), '..', 'mobile', 'dist'),
+  );
+
+  for (const candidate of candidates) {
+    if (existsSync(join(candidate, 'index.html'))) {
+      return candidate;
+    }
+  }
+  return null;
 }
 
 function buildAppInfo(): AppInfo {
@@ -48,7 +74,10 @@ function bootstrap(): void {
   const activeObsService = createObsService({
     db: database.db,
     secrets: createSafeStorageSecretStore(),
-    onChange: (snapshot) => broadcast('obs:status', snapshot),
+    onChange: (snapshot) => {
+      broadcast('obs:status', snapshot);
+      remoteService?.notifyObsStatus();
+    },
   });
   obsService = activeObsService;
 
@@ -57,12 +86,25 @@ function bootstrap(): void {
     obs: activeObsService.getActionPort(),
   });
 
+  const actions = createActionService({ db: database.db, ports: actionPorts });
+
+  const activeRemoteService = createRemoteService({
+    db: database.db,
+    executeAction: (buttonId) => actions.execute(buttonId),
+    getObsSnapshot: () => activeObsService.getSnapshot(),
+    mobileAssetsDir: resolveMobileAssetsDir(),
+    logger: activeLogger,
+    onStatusChange: (status) => broadcast('remote:status', status),
+  });
+  remoteService = activeRemoteService;
+
   registerIpcHandlers({
     logger: activeLogger,
     db: database.db,
     getAppInfo: buildAppInfo,
-    actions: createActionService({ db: database.db, ports: actionPorts }),
+    actions,
     obs: activeObsService,
+    remote: activeRemoteService,
   });
 
   recordActivity(database.db, {
@@ -77,6 +119,8 @@ function bootstrap(): void {
   });
 
   activeLogger.info('Main window created');
+
+  void activeRemoteService.initialize();
 }
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -123,6 +167,7 @@ if (!hasSingleInstanceLock) {
 
   app.on('before-quit', () => {
     logger?.info('ConDeck shutting down');
+    void remoteService?.dispose();
     void obsService?.dispose();
     closeDatabase();
   });
