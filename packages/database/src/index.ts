@@ -36,5 +36,18 @@ export {
   type IntegrationRow,
   type UpsertIntegrationInput,
 } from './repositories/integrations';
-export { countDevices, listDevices } from './repositories/devices';
+export {
+  countDevices,
+  createDevice,
+  endDeviceSession,
+  endOpenSessions,
+  getDevice,
+  getDeviceCredential,
+  listDevices,
+  revokeDevice,
+  startDeviceSession,
+  touchDevice,
+  type CreateDeviceInput,
+  type DeviceCredentialRecord,
+} from './repositories/devices';
 export { listRecentActivity, recordActivity, type RecordActivityInput } from './repositories/activity-logs';

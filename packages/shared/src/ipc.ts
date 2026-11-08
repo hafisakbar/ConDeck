@@ -42,9 +42,16 @@ import {
   type ObsTestResult,
   type SaveObsSettingsInput,
 } from './obs';
+import {
+  revokeDeviceInputSchema,
+  saveRemoteSettingsInputSchema,
+  type RemotePairing,
+  type RemoteServerStatus,
+  type SaveRemoteSettingsInput,
+} from './remote';
 
 /** Main-to-renderer events (not part of the request/response allowlist). */
-export const ipcEvents = ['navigation:request', 'obs:status'] as const;
+export const ipcEvents = ['navigation:request', 'obs:status', 'remote:status'] as const;
 export type IpcEvent = (typeof ipcEvents)[number];
 
 /**
@@ -83,6 +90,12 @@ export const ipcChannels = [
   'obs:test-connection',
   'obs:list-scenes',
   'devices:list',
+  'devices:revoke',
+  'remote:get-status',
+  'remote:save-settings',
+  'remote:start',
+  'remote:stop',
+  'remote:create-pairing',
   'activity:list',
 ] as const;
 
@@ -119,6 +132,12 @@ export const ipcInputSchemas = {
   'obs:test-connection': obsTestConnectionInputSchema,
   'obs:list-scenes': z.void(),
   'devices:list': z.void(),
+  'devices:revoke': revokeDeviceInputSchema,
+  'remote:get-status': z.void(),
+  'remote:save-settings': saveRemoteSettingsInputSchema,
+  'remote:start': z.void(),
+  'remote:stop': z.void(),
+  'remote:create-pairing': z.void(),
   'activity:list': listActivityInputSchema,
 } as const satisfies Record<IpcChannel, z.ZodType>;
 
@@ -245,5 +264,13 @@ export interface ConDeckBridge {
   onObsStatus(listener: (snapshot: ObsSnapshot) => void): () => void;
 
   listDevices(): Promise<IpcResult<Device[]>>;
+  revokeDevice(input: { deviceId: string }): Promise<IpcResult<Device>>;
+  getRemoteStatus(): Promise<IpcResult<RemoteServerStatus>>;
+  saveRemoteSettings(input: SaveRemoteSettingsInput): Promise<IpcResult<RemoteServerStatus>>;
+  startRemoteServer(): Promise<IpcResult<RemoteServerStatus>>;
+  stopRemoteServer(): Promise<IpcResult<RemoteServerStatus>>;
+  createRemotePairing(): Promise<IpcResult<RemotePairing>>;
+  /** Subscribes to host server status pushes; returns the unsubscribe function. */
+  onRemoteStatus(listener: (status: RemoteServerStatus) => void): () => void;
   listActivity(input?: { limit?: number }): Promise<IpcResult<ActivityLog[]>>;
 }

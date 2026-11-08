@@ -38,6 +38,7 @@ const { registerIpcHandlers } = await import('./handlers');
 const { FileLogger } = await import('../logger');
 const { createActionService } = await import('../services/action.service');
 type ObsService = import('../services/obs.service').ObsService;
+type RemoteService = import('../services/remote.service').RemoteService;
 
 const appInfo: AppInfo = {
   name: 'ConDeck',
@@ -54,6 +55,7 @@ let invoke: (channel: string, payload?: unknown) => Promise<IpcResult<unknown>>;
 let navigationRequests: NavigationRequest[];
 let actionPorts: ActionPorts;
 let obsService: ObsService;
+let remoteService: RemoteService;
 
 beforeEach(() => {
   registeredHandlers.clear();
@@ -122,12 +124,65 @@ beforeEach(() => {
     dispose: vi.fn(async () => undefined),
   };
 
+  remoteService = {
+    initialize: vi.fn(async () => undefined),
+    getStatus: () => ({
+      state: 'stopped' as const,
+      isEnabled: true,
+      port: 43821,
+      addresses: [],
+      error: null,
+      pairing: null,
+      connectedDevices: [],
+    }),
+    saveSettings: vi.fn(async (input) => ({
+      state: 'running' as const,
+      isEnabled: input.isEnabled,
+      port: input.port,
+      addresses: [`http://192.168.1.10:${input.port}`],
+      error: null,
+      pairing: null,
+      connectedDevices: [],
+    })),
+    start: vi.fn(async () => ({
+      state: 'running' as const,
+      isEnabled: true,
+      port: 43821,
+      addresses: ['http://192.168.1.10:43821'],
+      error: null,
+      pairing: null,
+      connectedDevices: [],
+    })),
+    stop: vi.fn(async () => ({
+      state: 'stopped' as const,
+      isEnabled: true,
+      port: 43821,
+      addresses: [],
+      error: null,
+      pairing: null,
+      connectedDevices: [],
+    })),
+    createPairing: vi.fn(async () => ({
+      token: 'a'.repeat(43),
+      expiresAt: '2026-01-01T10:02:00.000Z',
+      url: `http://192.168.1.10:43821/#pair=${'a'.repeat(43)}`,
+      qrDataUrl: 'data:image/png;base64,AAA',
+    })),
+    revokeDevice: vi.fn(() => {
+      throw new AppError('NOT_FOUND', 'Device not found.');
+    }),
+    notifyDeckChanged: vi.fn(),
+    notifyObsStatus: vi.fn(),
+    dispose: vi.fn(async () => undefined),
+  };
+
   registerIpcHandlers({
     logger: new FileLogger(join(workDir, 'logs', 'condeck.log')),
     db: database.db,
     getAppInfo: () => appInfo,
     actions: createActionService({ db: database.db, ports: actionPorts }),
     obs: obsService,
+    remote: remoteService,
   });
 
   invoke = (channel, payload) => {

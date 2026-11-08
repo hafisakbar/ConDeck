@@ -6,7 +6,8 @@
       "@condeck/shared": ["../../packages/shared/src/index.ts"],
       "@condeck/database": ["../../packages/database/src/index.ts"],
       "@condeck/action-engine": ["../../packages/action-engine/src/index.ts"],
-      "@condeck/obs-integration": ["../../packages/obs-integration/src/index.ts"]
+      "@condeck/obs-integration": ["../../packages/obs-integration/src/index.ts"],
+      "@condeck/websocket-protocol": ["../../packages/websocket-protocol/src/index.ts"]
     }
   },
   "files": ["../../packages/database/src/types.d.ts"],

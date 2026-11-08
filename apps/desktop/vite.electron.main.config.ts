@@ -12,6 +12,9 @@ const actionEngineEntry = fileURLToPath(
 const obsIntegrationEntry = fileURLToPath(
   new URL('../../packages/obs-integration/src/index.ts', import.meta.url),
 );
+const websocketProtocolEntry = fileURLToPath(
+  new URL('../../packages/websocket-protocol/src/index.ts', import.meta.url),
+);
 
 export default defineConfig({
   resolve: {
@@ -20,6 +23,7 @@ export default defineConfig({
       '@condeck/database': databaseEntry,
       '@condeck/action-engine': actionEngineEntry,
       '@condeck/obs-integration': obsIntegrationEntry,
+      '@condeck/websocket-protocol': websocketProtocolEntry,
     },
   },
   build: {
@@ -35,7 +39,7 @@ export default defineConfig({
     },
     rollupOptions: {
       // electron itself and the native SQLite binding must stay outside the bundle.
-      external: ['electron', 'better-sqlite3', ...nodeBuiltins],
+      external: ['electron', 'better-sqlite3', 'ws', 'qrcode', ...nodeBuiltins],
     },
   },
 });

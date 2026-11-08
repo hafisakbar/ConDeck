@@ -3,6 +3,7 @@ import {
   ipcChannels,
   navigationRequestSchema,
   obsSnapshotSchema,
+  remoteServerStatusSchema,
   type ActionCatalogEntry,
   type ActionExecutionResult,
   type ActionRecord,
@@ -23,7 +24,10 @@ import {
   type ObsSnapshot,
   type ObsTestResult,
   type Profile,
+  type RemotePairing,
+  type RemoteServerStatus,
   type SaveObsSettingsInput,
+  type SaveRemoteSettingsInput,
 } from '@condeck/shared';
 
 const allowedChannels = new Set<string>(ipcChannels);
@@ -112,6 +116,29 @@ const bridge: ConDeckBridge = {
   },
 
   listDevices: () => invoke<Device[]>('devices:list'),
+  revokeDevice: (input) => invoke<Device>('devices:revoke', input),
+
+  getRemoteStatus: () => invoke<RemoteServerStatus>('remote:get-status'),
+  saveRemoteSettings: (input: SaveRemoteSettingsInput) =>
+    invoke<RemoteServerStatus>('remote:save-settings', input),
+  startRemoteServer: () => invoke<RemoteServerStatus>('remote:start'),
+  stopRemoteServer: () => invoke<RemoteServerStatus>('remote:stop'),
+  createRemotePairing: () => invoke<RemotePairing>('remote:create-pairing'),
+
+  onRemoteStatus(listener) {
+    const handler = (_event: IpcRendererEvent, payload: unknown): void => {
+      const parsed = remoteServerStatusSchema.safeParse(payload);
+      if (parsed.success) {
+        listener(parsed.data);
+      }
+    };
+
+    ipcRenderer.on('remote:status', handler);
+    return () => {
+      ipcRenderer.removeListener('remote:status', handler);
+    };
+  },
+
   listActivity: (input) => invoke<ActivityLog[]>('activity:list', input ?? {}),
 };
 

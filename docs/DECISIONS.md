@@ -37,7 +37,7 @@ Sejak Phase 4, `CONNECTED` hanya dilaporkan ketika klien OBS WebSocket benar-ben
 ### ADR-001 — Struktur monorepo
 
 Dibuat sekarang: `packages/shared`, `packages/database`, `packages/config`.
-`packages/action-engine`, `packages/obs-integration`, `packages/websocket-protocol` **sengaja belum dibuat** karena implementasinya adalah isi Phase 3–5. Membuatnya sekarang hanya akan menghasilkan stub kosong yang melanggar aturan "jangan membuat mock implementation".
+`packages/action-engine`, `packages/obs-integration`, `packages/websocket-protocol` **sengaja belum dibuat** karena implementasinya adalah isi Phase 3–5. Membuatnya sekarang hanya akan menghasilkan stub kosong yang melanggar aturan "jangan membuat mock implementation". (Ketiganya sudah dibuat saat phase-nya dikerjakan: action-engine di Phase 3, obs-integration di Phase 4, websocket-protocol di Phase 5.)
 
 Status terkini: `action-engine` dibuat di Phase 3 dan `obs-integration` di Phase 4; `websocket-protocol` menyusul di Phase 5.
 
@@ -161,15 +161,45 @@ Konsekuensi: request yang timeout dilaporkan `ACTION_TIMEOUT`/gagal, tetapi prom
 
 Field `sceneName` pada action Switch scene ditampilkan sebagai dropdown berisi scene dari snapshot OBS ketika OBS terhubung; nilai yang sudah tersimpan tetap muncul walau scene tersebut sudah tidak ada, supaya konfigurasi lama tidak hilang diam-diam. Saat OBS tidak terhubung, field tetap berupa input teks dan action tetap bisa disimpan — validasi nama scene sebenarnya dilakukan OBS saat eksekusi.
 
+### ADR-026 — Remote sebagai PWA yang disajikan server desktop
+
+ConDeck Mobile dibuat sebagai aplikasi web statis (`apps/mobile`, Vite + React + Tailwind) yang di-build ke `apps/mobile/dist` dan disajikan oleh server remote desktop di `http://<lan-ip>:43821/`. Tidak ada aplikasi native, tidak ada backend terpisah, dan tidak ada akses database dari HP: satu-satunya jalur data adalah WebSocket ke desktop.
+
+Konsekuensi: HP harus berada di jaringan yang sama dengan desktop dan port remote harus diizinkan firewall. Karena halaman disajikan lewat HTTP biasa (bukan secure context), service worker tidak aktif di LAN; shell tetap bisa dipasang sebagai shortcut, tetapi tanpa mode offline. Path `dist` dicari di `CONDECK_MOBILE_DIR`, `resources/mobile` (build terpaket), atau `apps/mobile/dist` (development).
+
+### ADR-027 — Kredensial perangkat: dikirim sekali, disimpan sebagai hash
+
+Pairing code dibuat acak 32 byte, hanya hidup di memori, berumur 2 menit, sekali pakai, dan hangus setelah 5 percobaan. Saat pairing berhasil, desktop membuat kredensial perangkat acak 32 byte (base64url) dan mengirimkannya satu kali; database hanya menyimpan hash SHA-256 di `devices.credential_hash`, dan verifikasi memakai `timingSafeEqual`.
+
+Kredensial disimpan di HP (localStorage) dan dikirim ulang pada setiap koneksi baru lewat `auth.resume`. Mencabut perangkat menutup socket yang sedang terbuka, dan HP yang ditolak berhenti mencoba lalu menghapus kredensialnya. Kode pairing tidak pernah masuk database maupun log.
+
+### ADR-028 — Kontrak pesan sebagai package bersama
+
+`packages/websocket-protocol` (Zod) memuat envelope `{ type, requestId, timestamp, payload }`, schema setiap pesan, konstanta (port 43821, path `/ws`, TTL pairing, interval heartbeat, batas 8 KB) dan close code. Desktop dan mobile memvalidasi pesan dengan schema yang sama sebelum apa pun dieksekusi.
+
+Pesan yang tidak valid dijawab `error` dengan `INVALID_REQUEST`; pesan melebihi 8 KB langsung menutup koneksi (1009), dan batas 30 pesan per 5 detik per koneksi menutup koneksi dengan 4429.
+
+### ADR-029 — Snapshot deck tanpa konfigurasi action
+
+Remote menerima `deck.snapshot` berisi deck profil aktif: nama, kolom/baris, halaman, dan tombol dengan label, ikon, warna, status aktif, serta `hasAction` — tanpa konfigurasi action. Eksekusi tetap terjadi di desktop berdasarkan `buttonId` yang divalidasi terhadap deck aktif, jadi HP tidak pernah mengirim detail action.
+
+Perubahan deck mengirim `deck.updated`, dan mobile merespons dengan `deck.get`. Status OBS didorong lewat `obs.status` setiap kali OBS berubah. Bila profil aktif belum punya deck, payload snapshot bernilai `null` dan mobile menampilkan keadaan kosong, bukan data palsu.
+
+### ADR-030 — Pengaturan remote di tabel integrations
+
+Port dan status aktif remote disimpan pada baris `integrations` provider `remote`, sama seperti pengaturan OBS, sehingga tidak perlu migrasi baru. Server dijalankan/dihentikan dari halaman Remote Devices dan statusnya dipublikasikan lewat event `remote:status`; pairing code hanya berada di status (memori) dan hilang saat aplikasi ditutup.
+
 ---
 
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
 
 1. Binding native Electron belum diverifikasi di lingkungan build saat ini (Linux tanpa GUI, target Windows). Aplikasi Electron belum dijalankan dan dilihat secara visual.
-2. Remote server, device authentication, dan QR pairing (Phase 5) belum diimplementasikan.
-3. Multi-action per tombol, drag & drop, custom image, soundboard dan macro belum ada (roadmap v1.1).
-4. Action yang melewati batas waktu tidak dapat dibatalkan: hasilnya dilaporkan `ACTION_TIMEOUT`, tetapi promise handler (termasuk request OBS) tetap berjalan sampai selesai. Pembatalan sungguhan perlu AbortSignal di `ObsPort`.
-5. ConDeck tidak melakukan auto-reconnect: bila OBS ditutup atau WebSocket-nya dimatikan, status berubah ke `DISCONNECTED` dan pengguna perlu menekan Connect lagi.
-6. Koneksi OBS hanya memakai `ws://` (LAN/localhost). `wss://` dengan sertifikat kustom belum didukung.
-7. Nama audio input untuk action mute masih diketik manual; daftar input audio dari OBS belum ditampilkan karena roadmap Phase 4 hanya mensyaratkan daftar scene.
-8. Belum ada electron-builder config/installer (Phase 6).
+2. Remote (Phase 5) sudah berjalan dan diuji lewat integration test dengan HTTP/WebSocket sungguhan, tetapi belum dicoba pada HP fisik. PWA belum installable penuh karena LAN memakai HTTP (butuh HTTPS untuk service worker), dan belum ada dukungan `wss://`/sertifikat.
+3. Rate limit remote dihitung per koneksi, bukan per IP/perangkat; pembatasan lintas koneksi dan proteksi brute force pairing di level jaringan belum ada.
+4. Remote hanya menampilkan deck pertama dari profil aktif dan satu action per tombol; pemilihan deck dan multi-action menunggu roadmap v1.1.
+5. Multi-action per tombol, drag & drop, custom image, soundboard dan macro belum ada (roadmap v1.1).
+6. Action yang melewati batas waktu tidak dapat dibatalkan: hasilnya dilaporkan `ACTION_TIMEOUT`, tetapi promise handler (termasuk request OBS) tetap berjalan sampai selesai. Pembatalan sungguhan perlu AbortSignal di `ObsPort`.
+7. ConDeck tidak melakukan auto-reconnect ke OBS: bila OBS ditutup atau WebSocket-nya dimatikan, status berubah ke `DISCONNECTED` dan pengguna perlu menekan Connect lagi. (Remote di HP sudah punya auto-reconnect sendiri.)
+8. Koneksi OBS hanya memakai `ws://` (LAN/localhost). `wss://` dengan sertifikat kustom belum didukung.
+9. Nama audio input untuk action mute masih diketik manual; daftar input audio dari OBS belum ditampilkan karena roadmap Phase 4 hanya mensyaratkan daftar scene.
+10. Belum ada electron-builder config/installer (Phase 6).
