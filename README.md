@@ -14,12 +14,12 @@ Pengembangan mengikuti `DEVELOPMENT_ROADMAP.md`, satu phase per iterasi.
 | 2 — Deck Builder | Deck, page, button grid, button editor, icon & colour customization, profile edit/delete | ✅ Selesai |
 | 3 — Action Engine | Action registry, validasi, eksekusi, feedback | ✅ Selesai |
 | 4 — OBS Integration | OBS WebSocket v5, scene/stream/record/audio | ✅ Selesai |
-| 5 — Mobile Remote | PWA, WebSocket server, QR pairing, device auth | ⏳ Belum |
+| 5 — Mobile Remote | PWA, WebSocket server, QR pairing, device auth | ✅ Selesai |
 | 6 — Testing & Release | E2E, security, installer Windows | ⏳ Belum |
 
 Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit, bukan data palsu.
 
-### Yang sudah bisa dilakukan (Phase 1 + 2 + 3 + 4)
+### Yang sudah bisa dilakukan (Phase 1 + 2 + 3 + 4 + 5)
 
 - Membuat, mengganti nama, mengubah ukuran grid, dan menghapus deck. Default 3 × 3, dengan preset 4 × 4, 5 × 3, 5 × 5 dan ukuran custom 1–8 baris/kolom.
 - Menambah, mengganti nama, dan menghapus halaman. Posisi halaman otomatis dirapikan setelah penghapusan.
@@ -37,6 +37,15 @@ Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit
 - Daftar scene OBS dipakai sebagai pilihan di editor action, jadi nama scene tidak perlu diketik manual saat OBS terhubung.
 - Password OBS tidak pernah disimpan plaintext: hanya disimpan sebagai ciphertext Electron `safeStorage` di kolom `credential_reference`.
 - Semua perubahan langsung tersimpan ke SQLite dan tetap ada setelah aplikasi ditutup.
+- Menyalakan remote server dari halaman Remote Devices: port (default 43821), start/stop, dan alamat LAN yang bisa dibuka dari HP.
+- Membuat pairing code berumur 2 menit beserta QR code; kode sekali pakai dan dibatasi 5 percobaan.
+- Memasangkan HP dengan memindai QR (token ada di fragment URL, tidak pernah dikirim ke server) atau mengetik alamat + kode secara manual.
+- Kredensial perangkat dibuat acak 32 byte, disimpan di HP, dan desktop hanya menyimpan hash SHA-256-nya; verifikasi memakai perbandingan waktu konstan.
+- Melihat daftar perangkat yang terhubung dan mencabut aksesnya; socket perangkat yang dicabut langsung diputus.
+- Remote menampilkan deck profil aktif apa adanya — halaman, ukuran grid, label, ikon, dan warna — lalu menjalankan action yang sama dengan desktop lewat `button.press`.
+- Status OBS (terhubung, live, recording, scene) dan hasil action tampil di HP; deck yang diubah di desktop langsung dikirim ulang.
+- Remote tidak punya akses database dan tidak bisa mengirim perintah bebas: hanya `auth.pair`, `auth.resume`, `deck.get`, `button.press`, `page.change`, dan `ping` yang diterima.
+- HP menyambung ulang otomatis dengan heartbeat 15 detik, dan berhenti mencoba ketika kredensialnya sudah dicabut.
 
 ## Prasyarat
 
@@ -61,16 +70,32 @@ pnpm dev
 | Perintah | Fungsi |
 |---|---|
 | `pnpm dev` | Jalankan ConDeck Desktop (development) |
+| `pnpm dev:mobile` | Jalankan ConDeck Mobile (Vite, port 5274) untuk pengembangan UI remote |
 | `pnpm build` | Build produksi renderer + Electron main/preload |
 | `pnpm typecheck` | TypeScript check seluruh workspace |
 | `pnpm lint` | ESLint |
 | `pnpm test` | Vitest (unit + integration, tanpa GUI) |
 | `pnpm db:generate` | Generate migrasi SQL Drizzle setelah mengubah `schema.ts` |
 
+## Remote di HP
+
+1. Build aplikasi mobile: `pnpm --filter @condeck/mobile build` (sudah termasuk dalam `pnpm build`).
+2. Jalankan desktop (`pnpm dev`), buka **Remote Devices**, tentukan port, lalu nyalakan server remote.
+3. Pastikan HP dan komputer berada di Wi-Fi yang sama, lalu pindai QR yang muncul. Bila kamera tidak bisa membuka tautannya, buka alamat yang tertulis dan tempelkan pairing code secara manual.
+4. Setelah dipasangkan, HP mengingat kredensialnya dan menyambung ulang sendiri setiap kali halaman dibuka.
+
+Catatan:
+
+- Windows Firewall harus mengizinkan port remote (default 43821) untuk jaringan privat; tanpa itu HP tidak dapat membuka halaman.
+- Remote disajikan lewat HTTP biasa di LAN. Service worker dan prompt “Install app” memerlukan HTTPS, jadi tanpa itu halaman tetap berfungsi sebagai web app selama server desktop hidup — “Add to Home Screen” di iOS masih bisa, tetapi mode offline tidak.
+- `pnpm dev:mobile` hanya untuk mengembangkan UI remote: buka di browser, lalu isi alamat desktop dan pairing code secara manual.
+- Mencabut perangkat dari desktop langsung memutus koneksinya; HP berhenti mencoba dan diminta pairing ulang.
+
 ## Struktur
 
 ```text
 condeck/
+├── apps/mobile/           # PWA remote (Vite + React, disajikan server desktop)
 ├── apps/desktop/
 │   ├── electron/
 │   │   ├── main/          # lifecycle, window, IPC, services (database, dashboard)
@@ -86,6 +111,7 @@ condeck/
 │   ├── shared/            # tipe + schema Zod + kontrak IPC
 │   ├── action-engine/     # registry, port, executor action
 │   ├── obs-integration/   # klien OBS WebSocket v5 + sinkronisasi status
+│   ├── websocket-protocol/# kontrak pesan remote (Zod, envelope, close code)
 │   └── database/          # schema Drizzle, migrasi, repository
 ├── docs/                  # catatan keputusan arsitektur
 └── pnpm-workspace.yaml
@@ -102,6 +128,9 @@ condeck/
 - CSP ketat disuntikkan ke HTML hasil build (dev server dikecualikan karena kebutuhan HMR).
 - Password OBS disimpan lewat Electron `safeStorage`; database hanya menyimpan referensi ciphertext. Sistem tanpa credential store aman (mis. Linux tanpa keyring) ditolak saat menyimpan password.
 - Logger meredaksi field `password`, `secret`, `token`, `credential`, `hash`.
+- Remote server hanya menerima pesan yang lolos schema Zod (maksimum 8 KB per pesan) dan hanya setelah perangkat terautentikasi; tidak ada channel untuk menjalankan shell atau perintah bebas.
+- Pairing code disimpan di memori (bukan database), berumur 2 menit, sekali pakai, dan hangus setelah 5 percobaan.
+- Kredensial perangkat hanya dikirim sekali saat pairing; database menyimpan hash SHA-256 dan perbandingan memakai `timingSafeEqual`. Respons remote memakai header CSP ketat (`connect-src 'self' ws: wss:`).
 
 ## Database
 
