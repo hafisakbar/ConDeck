@@ -189,6 +189,14 @@ Perubahan deck mengirim `deck.updated`, dan mobile merespons dengan `deck.get`. 
 
 Port dan status aktif remote disimpan pada baris `integrations` provider `remote`, sama seperti pengaturan OBS, sehingga tidak perlu migrasi baru. Server dijalankan/dihentikan dari halaman Remote Devices dan statusnya dipublikasikan lewat event `remote:status`; pairing code hanya berada di status (memori) dan hilang saat aplikasi ditutup.
 
+### ADR-031 — E2E memakai Playwright di dalam Vitest
+
+E2E menjalankan PWA hasil build di Chromium headless, terhubung ke `createRemoteServer` sungguhan dengan SQLite sungguhan: pairing dari link QR, render deck, tekan tombol, dan error pairing. Runner-nya Vitest (bukan `@playwright/test`) agar alias workspace dan impor `?raw` migrasi SQL tetap bekerja tanpa build tambahan. Konsekuensi: E2E dijalankan dengan konfigurasi terpisah (`vitest.e2e.config.ts`, `pnpm test:e2e`) karena membutuhkan `apps/mobile/dist` dan Chromium.
+
+### ADR-032 — Distribusi lewat electron-builder + workflow Windows
+
+Paket Windows memakai electron-builder dengan target NSIS (`perMachine: false`, installer memilih folder, shortcut desktop/Start Menu) dan `extraResources` berisi `apps/mobile/dist` ke `resources/mobile` — jalur yang sudah dibaca `resolveMobileAssetsDir()` saat `app.isPackaged`. Native `better-sqlite3` di-rebuild oleh `npmRebuild: true`. Installer dibuat di `windows-latest` melalui `.github/workflows/release.yml`; CI Linux hanya memverifikasi typecheck, lint, test, build, dan E2E. Konsekuensi: installer belum ditandatangani (SmartScreen) dan instalasi di Windows fisik tetap harus diuji manual.
+
 ---
 
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
@@ -202,4 +210,6 @@ Port dan status aktif remote disimpan pada baris `integrations` provider `remote
 7. ConDeck tidak melakukan auto-reconnect ke OBS: bila OBS ditutup atau WebSocket-nya dimatikan, status berubah ke `DISCONNECTED` dan pengguna perlu menekan Connect lagi. (Remote di HP sudah punya auto-reconnect sendiri.)
 8. Koneksi OBS hanya memakai `ws://` (LAN/localhost). `wss://` dengan sertifikat kustom belum didukung.
 9. Nama audio input untuk action mute masih diketik manual; daftar input audio dari OBS belum ditampilkan karena roadmap Phase 4 hanya mensyaratkan daftar scene.
-10. Belum ada electron-builder config/installer (Phase 6).
+10. Installer Windows sudah dikonfigurasi dan dibangun lewat workflow `windows-latest`, tetapi belum diverifikasi dengan instalasi pada mesin Windows fisik di lingkungan pengembangan ini. Installer juga belum ditandatangani (SmartScreen memperingatkan).
+11. E2E mencakup PWA mobile + server remote + database, belum UI Electron (butuh runner GUI/Windows). Checklist manual di `docs/RELEASE.md` menutup celah ini sebelum rilis.
+12. Performance testing masih terbatas pada pengukuran tidak formal: belum ada benchmark berkelanjutan untuk snapshot deck besar atau latensi remote di bawah beban.

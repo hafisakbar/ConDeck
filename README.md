@@ -15,11 +15,11 @@ Pengembangan mengikuti `DEVELOPMENT_ROADMAP.md`, satu phase per iterasi. Kita bi
 | 3 — Action Engine     | Action registry, validasi, eksekusi, feedback                                                 | ✅ Selesai |
 | 4 — OBS Integration   | OBS WebSocket v5, scene/stream/record/audio                                                   | ✅ Selesai |
 | 5 — Mobile Remote     | PWA, WebSocket server, QR pairing, device auth                                                | ✅ Selesai |
-| 6 — Testing & Release | E2E, security, installer Windows                                                              | ⏳ Belum   |
+| 6 — Testing & Release | E2E, migration & security tests, installer Windows, dokumentasi rilis                        | ✅ Selesai |
 
 Halaman yang fiturnya belum masuk phase terkait menampilkan keterangan eksplisit, bukan data palsu.
 
-### Yang sudah bisa dilakukan (Phase 1 + 2 + 3 + 4 + 5)
+### Yang sudah bisa dilakukan (Phase 1–6)
 
 - Membuat, mengganti nama, mengubah ukuran grid, dan menghapus deck. Default 3 × 3, dengan preset 4 × 4, 5 × 3, 5 × 5 dan ukuran custom 1–8 baris/kolom.
 - Menambah, mengganti nama, dan menghapus halaman. Posisi halaman otomatis dirapikan setelah penghapusan.
@@ -75,6 +75,8 @@ pnpm dev
 | `pnpm typecheck`   | TypeScript check seluruh workspace                                     |
 | `pnpm lint`        | ESLint                                                                 |
 | `pnpm test`        | Vitest (unit + integration, tanpa GUI)                                 |
+| `pnpm test:e2e`    | Build PWA lalu jalankan E2E Playwright terhadap server remote sungguhan |
+| `pnpm dist:win`    | electron-builder: installer Windows (NSIS) di `release/`              |
 | `pnpm db:generate` | Generate migrasi SQL Drizzle setelah mengubah `schema.ts`              |
 
 ## Remote di HP

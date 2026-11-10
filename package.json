@@ -16,10 +16,13 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "pnpm --filter @condeck/mobile build && vitest run --config vitest.e2e.config.ts",
+    "dist:win": "pnpm --filter @condeck/desktop dist:win",
     "db:generate": "pnpm --filter @condeck/database db:generate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.0",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "typescript": "^5.9.3",

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "ConDeck Desktop — host application (Electron + React).",
+  "author": "ConDeck",
   "main": "dist-electron/main/index.cjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
@@ -12,7 +13,9 @@
     "build:electron": "vite build --config vite.electron.main.config.ts && vite build --config vite.electron.preload.config.ts",
     "build:renderer": "vite build",
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.electron.json",
-    "rebuild:native": "electron-rebuild -f -w better-sqlite3"
+    "rebuild:native": "electron-rebuild -f -w better-sqlite3",
+    "dist:win": "pnpm build && electron-builder --win --x64 --publish never",
+    "dist:dir": "pnpm build && electron-builder --dir --publish never"
   },
   "dependencies": {
     "@condeck/action-engine": "workspace:*",
@@ -41,6 +44,7 @@
     "@types/ws": "^8.18.2",
     "@vitejs/plugin-react": "^6.2.1",
     "electron": "^45.2.3",
+    "electron-builder": "^26.18.0",
     "tailwindcss": "^4.3.4",
     "typescript": "^5.9.3",
     "vite": "^8.3.6"

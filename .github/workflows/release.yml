@@ -1,0 +1,37 @@
+name: Release installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.20.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build desktop and mobile
+        run: pnpm build
+      - name: Run tests
+        run: pnpm test
+      - name: Build the NSIS installer
+        run: pnpm dist:win
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: condeck-windows-installer
+          path: release/*.exe
+          if-no-files-found: error
