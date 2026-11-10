@@ -197,6 +197,14 @@ E2E menjalankan PWA hasil build di Chromium headless, terhubung ke `createRemote
 
 Paket Windows memakai electron-builder dengan target NSIS (`perMachine: false`, installer memilih folder, shortcut desktop/Start Menu) dan `extraResources` berisi `apps/mobile/dist` ke `resources/mobile` — jalur yang sudah dibaca `resolveMobileAssetsDir()` saat `app.isPackaged`. Native `better-sqlite3` di-rebuild oleh `npmRebuild: true`. Installer dibuat di `windows-latest` melalui `.github/workflows/release.yml`; CI Linux hanya memverifikasi typecheck, lint, test, build, dan E2E. Konsekuensi: installer belum ditandatangani (SmartScreen) dan instalasi di Windows fisik tetap harus diuji manual.
 
+### ADR-033 — Deck 3D memakai three.js + react-three-fiber, preferensi tampilan di perangkat
+
+Panggung deck dirender dengan `three`, `@react-three/fiber`, dan `@react-three/drei` (RoundedBox, ContactShadows, Environment). Setiap tombol adalah mesh keycap + socket sendiri dengan raycast dari fiber, dan label/ikon digambar ke `CanvasTexture` (ikon Lucide diserialisasi lewat `renderToStaticMarkup`). Scene dimuat dengan `React.lazy` supaya three.js tidak masuk bundle halaman lain, dan ada fallback grid 2D bila WebGL tidak tersedia.
+
+Batas data dijaga: `decks.columns`/`decks.rows` tetap satu-satunya sumber ukuran grid (1–8) dan tidak ada skema baru. Ukuran tombol, jarak, zoom, dan mode edit/live adalah preferensi tampilan murni, jadi disimpan di `localStorage` (`condeck.device.preferences`, `condeck.device.mode`) lewat `lib/device-preferences.ts`. Konsekuensinya preferensi tidak ikut tersinkron antar komputer, dan menghapus data situs mengembalikannya ke default.
+
+Konsekuensi lain: bundle renderer bertambah satu chunk three.js (>500 kB) yang hanya diunduh saat halaman My Deck dibuka, sehingga peringatan `chunkSizeWarningLimit` Vite tetap muncul.
+
 ---
 
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
@@ -213,3 +221,5 @@ Paket Windows memakai electron-builder dengan target NSIS (`perMachine: false`, 
 10. Installer Windows sudah dikonfigurasi dan dibangun lewat workflow `windows-latest`, tetapi belum diverifikasi dengan instalasi pada mesin Windows fisik di lingkungan pengembangan ini. Installer juga belum ditandatangani (SmartScreen memperingatkan).
 11. E2E mencakup PWA mobile + server remote + database, belum UI Electron (butuh runner GUI/Windows). Checklist manual di `docs/RELEASE.md` menutup celah ini sebelum rilis.
 12. Performance testing masih terbatas pada pengukuran tidak formal: belum ada benchmark berkelanjutan untuk snapshot deck besar atau latensi remote di bawah beban.
+13. Deck 3D baru diverifikasi lewat harness Chromium (screenshot `docs/screenshots`) dan unit test geometri grid, belum dijalankan di dalam Electron pada Windows. Render WebGL di GPU nyata, perilaku `safeStorage`, dan drag/zoom dengan trackpad masih perlu dicek manual.
+14. Screenshot di `docs/screenshots` dihasilkan `scripts/preview/capture.mjs` dengan bridge tiruan; angkanya bukan bukti integrasi database/OBS.
