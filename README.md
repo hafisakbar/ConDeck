@@ -20,7 +20,20 @@ ConDeck memindahkan kontrol OBS Studio ke layar yang benar-benar bisa kamu sentu
 - **Satu tombol, satu aksi nyata.** Pindah scene, mulai/stop streaming dan recording, mute audio — dikonfirmasi oleh respons OBS, bukan asumsi sukses.
 - **HP jadi remote sungguhan.** Pairing lewat QR, lalu tekan tombol dari HP dan lihat status OBS langsung berubah.
 
----
+## Antarmuka
+
+![ConDeck 3D deck](docs/screenshots/workspace.png)
+
+Landing page ConDeck adalah perangkat stream deck 3D yang bisa diputar, diperbesar, dan ditekan langsung. Tidak ada sidebar permanen: navigasi dibuka lewat tombol menu di kiri atas, sehingga panggung deck memakai seluruh jendela.
+
+- **Dua mode yang jelas.** `Edit` untuk memilih dan mengonfigurasi tombol; `Live` untuk menjalankan action. Panel properti otomatis tertutup saat masuk Live.
+- **Klik untuk mengonfigurasi.** Klik keycap (atau slot kosong) untuk membuka panel properti mengambang berisi label, ikon, warna, posisi, dan action. Tidak ada panel yang selalu memakan ruang.
+- **Grid fleksibel.** Baris/kolom (1–8) disimpan di database bersama deck. Ukuran tombol, jarak, dan zoom disimpan sebagai preferensi lokal, plus tombol **Fit**. Mengecilkan grid yang masih berisi tombol meminta konfirmasi karena slot tersebut akan dihapus.
+- **Tetap ringan.** Setiap keycap adalah mesh individual dengan tekstur canvas (label + ikon Lucide), bukan 64 elemen DOM. Scene three.js dimuat terpisah (lazy) dan diganti fallback grid 2D bila WebGL tidak tersedia.
+
+Tombol menu membuka drawer berisi seluruh halaman lama — Dashboard, My Deck, Profiles, Integrations, Remote Devices, Activity Logs, Settings — jadi tidak ada fitur yang hilang.
+
+![Navigasi drawer](docs/screenshots/menu.png)
 
 ## Arsitektur
 
@@ -75,7 +88,7 @@ pnpm dev
 
 Setelah jendela terbuka:
 
-1. **Decks** — buat deck, tambah tombol, pilih action dari panel properti, lalu tekan tombol play untuk menguji.
+1. **My Deck** — buat deck, klik keycap untuk menambah/mengubah tombol dan action, lalu pindah ke **Live** untuk menguji tekanannya.
 2. **Integrations** — isi host/port/password OBS WebSocket, klik **Connect**. Daftar scene langsung muncul di editor action.
 3. **Devices** — nyalakan server remote, lalu pindai QR dari HP yang berada di Wi-Fi yang sama.
 
@@ -153,12 +166,21 @@ Menambah perubahan schema: ubah `schema.ts` → `pnpm db:generate` → daftarkan
 
 | Lapisan            | Cakupan                                                                                                              |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Unit + integration | 223 test / 22 file — repository & migrasi database, action registry, klien OBS, remote server, protokol, UI mobile.   |
+| Unit + integration | 230 test / 23 file — repository & migrasi database, action registry, klien OBS, remote server, protokol, UI mobile, geometri grid 3D. |
 | E2E                | Playwright (Chromium) menjalankan **PWA hasil build** ke server remote + SQLite sungguhan: CSP/aset, pairing QR, render deck, tekan tombol sampai feedback sukses, pairing code salah. |
 | Keamanan           | Preload hanya mengekspos `condeck`; seluruh channel yang dipakai ada di allowlist IPC.                               |
 | CI                 | Setiap PR & push ke `main`: typecheck → lint → unit/integration → build → E2E.                                       |
 
 Yang belum tercakup otomatis: UI Electron end-to-end (butuh runner GUI/Windows), instalasi pada mesin Windows fisik, dan benchmark performa berkelanjutan.
+
+Untuk pratinjau tampilan tanpa membuka Electron, harness di `scripts/preview` menyajikan hasil build renderer dengan bridge tiruan lalu memotretnya:
+
+```bash
+pnpm --filter @condeck/desktop build
+node scripts/preview/capture.mjs   # menulis docs/screenshots/*.png
+```
+
+Harness ini hanya alat review. Ia tidak memakai database, OBS, maupun IPC sungguhan, jadi bukan pengganti pengujian aplikasi Electron.
 
 ## Struktur
 
@@ -170,8 +192,8 @@ condeck/
 │   │   │   ├── main/          # lifecycle, window, IPC, services (database, remote, dashboard)
 │   │   │   └── preload/       # contextBridge — satu-satunya jembatan ke renderer
 │   │   ├── src/
-│   │   │   ├── components/    # layout, ui, activity, dashboard, profiles, deck
-│   │   │   ├── pages/         # Dashboard, Decks, Profiles, Integrations, Devices, Activity, Settings
+│   │   │   ├── components/    # layout, ui, activity, dashboard, profiles, deck, stream-deck (3D)
+│   │   │   ├── pages/         # Dashboard, My Deck (3D), Profiles, Integrations, Devices, Activity, Settings
 │   │   │   ├── stores/        # Zustand
 │   │   │   └── lib/           # bridge, format, navigasi
 │   │   ├── build/             # ikon aplikasi
@@ -186,6 +208,7 @@ condeck/
 │   ├── websocket-protocol/    # kontrak pesan remote (Zod, envelope, close code)
 │   └── database/              # schema Drizzle, migrasi, repository
 ├── e2e/                       # Playwright di dalam Vitest
+├── scripts/preview/           # harness screenshot renderer (mock bridge + Playwright)
 ├── files/                     # PRD, spesifikasi teknis, kontrak, roadmap
 ├── docs/                      # DECISIONS.md, RELEASE.md
 ├── .github/workflows/         # ci.yml, release.yml
