@@ -21,6 +21,9 @@ const CATEGORY_LABELS: Record<string, string> = {
   NAVIGATION: 'Navigation',
 };
 
+/** Stable empty array so the store selector never returns a new reference. */
+const NO_SCENES: string[] = [];
+
 export interface ActionEditorProps {
   button: DeckButtonWithAction;
   catalog: ActionCatalogEntry[];
@@ -43,8 +46,9 @@ export function ActionEditor({
   const [actionType, setActionType] = useState<ActionType | ''>(button.action?.actionType ?? '');
   const [config, setConfig] = useState<Record<string, unknown>>(button.action?.config ?? {});
   const [error, setError] = useState<string | null>(null);
-  const obsState = useObsStore((state) => state.snapshot?.state ?? null);
-  const obsScenes = useObsStore((state) => state.snapshot?.scenes ?? []);
+  const obsSnapshot = useObsStore((state) => state.snapshot);
+  const obsState = obsSnapshot?.state ?? null;
+  const obsScenes = obsSnapshot?.scenes ?? NO_SCENES;
 
   useEffect(() => {
     setActionType(button.action?.actionType ?? '');

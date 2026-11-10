@@ -1,26 +1,26 @@
 @import 'tailwindcss';
 
 @theme {
-  --color-canvas: #0a0c11;
-  --color-surface: #101319;
-  --color-surface-raised: #161a22;
-  --color-border-subtle: #222834;
-  --color-border-strong: #2f3648;
-  --color-content: #e8ebf2;
-  --color-content-muted: #98a1b3;
-  --color-content-subtle: #6b7488;
-  --color-accent: #7c5cff;
-  --color-accent-hover: #8f74ff;
-  --color-accent-soft: #211c3d;
-  --color-success: #34c17b;
-  --color-warning: #d8a13a;
-  --color-danger: #e35663;
+  --color-canvas: #0b0d12;
+  --color-surface: #11151d;
+  --color-surface-raised: #191f2a;
+  --color-border-subtle: rgba(255, 255, 255, 0.075);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+  --color-content: #f4f6fa;
+  --color-content-muted: #929baa;
+  --color-content-subtle: #6a7280;
+  --color-accent: #7657ff;
+  --color-accent-hover: #8a70ff;
+  --color-accent-soft: #1d1936;
+  --color-success: #35c07d;
+  --color-warning: #d7a03c;
+  --color-danger: #e25763;
   --color-danger-soft: #2a171c;
 
-  --radius-panel: 0.875rem;
-  --radius-control: 0.625rem;
+  --radius-panel: 1rem;
+  --radius-control: 0.65rem;
 
-  --font-sans: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', Inter, system-ui, -apple-system, sans-serif;
   --font-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
 }
 
@@ -38,8 +38,9 @@
 
   body {
     margin: 0;
-    background-color: var(--color-canvas);
     color: var(--color-content);
+    background-color: var(--color-canvas);
+    background-image: radial-gradient(800px 420px at 50% -10%, #171b25 0%, #0b0d12 60%);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     overscroll-behavior: none;

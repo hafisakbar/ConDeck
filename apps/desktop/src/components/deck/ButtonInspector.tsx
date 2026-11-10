@@ -134,7 +134,7 @@ export function ButtonInspector({
         </button>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 pb-8 pt-4">
         <Input
           label="Label"
           value={label}

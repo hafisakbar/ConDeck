@@ -7,6 +7,7 @@ interface NavigationState {
 }
 
 export const useNavigationStore = create<NavigationState>((set) => ({
-  view: 'dashboard',
+  // Device-first: the 3D deck is the landing screen, not an admin dashboard.
+  view: 'decks',
   setView: (view) => set({ view }),
 }));
