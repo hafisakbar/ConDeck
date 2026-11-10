@@ -1,6 +1,7 @@
 import type {
   ActionCatalogEntry,
   ActionType,
+  ButtonAppearance,
   ButtonIconName,
   DeckDetail,
   DeckSummary,
@@ -17,6 +18,7 @@ export interface ButtonDraft {
   icon: ButtonIconName | null;
   backgroundColor: string;
   textColor: string;
+  appearance: ButtonAppearance | null;
   isEnabled: boolean;
   position: number;
 }
@@ -40,6 +42,10 @@ interface DeckState {
   lastSavedAt: string | null;
   catalog: ActionCatalogEntry[];
   executions: Record<string, ExecutionState>;
+  /** Unsaved appearance edits, previewed on the device until they are saved. */
+  appearanceDraft: Record<string, ButtonAppearance>;
+  previewAppearance: (buttonId: string, appearance: ButtonAppearance | null) => void;
+  clearAppearanceDrafts: () => void;
 
   load: (profileId: string | null) => Promise<void>;
   selectDeck: (deckId: string) => Promise<void>;
@@ -93,6 +99,23 @@ export const useDeckStore = create<DeckState>((set, get) => ({
   lastSavedAt: null,
   catalog: [],
   executions: {},
+  appearanceDraft: {},
+
+  previewAppearance(buttonId, appearance) {
+    set((state) => {
+      const next = { ...state.appearanceDraft };
+      if (appearance === null) {
+        delete next[buttonId];
+      } else {
+        next[buttonId] = appearance;
+      }
+      return { appearanceDraft: next };
+    });
+  },
+
+  clearAppearanceDrafts() {
+    set({ appearanceDraft: {} });
+  },
 
   async load(profileId) {
     if (!profileId) {

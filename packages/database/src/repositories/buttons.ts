@@ -4,7 +4,9 @@ import {
   AppError,
   DEFAULT_BUTTON_BACKGROUND,
   DEFAULT_BUTTON_TEXT_COLOR,
+  buttonAppearanceSchema,
   type ActionRecord,
+  type ButtonAppearance,
   type CreateButtonInput,
   type DeckButtonWithAction,
   type DuplicateButtonInput,
@@ -17,6 +19,33 @@ import { assertPositionInGrid, getPageGrid } from './grid';
 
 type ButtonRow = typeof buttons.$inferSelect;
 
+/** Stored JSON is untrusted input: an invalid value degrades to "no appearance". */
+export function readAppearanceJson(value: string | null): ButtonAppearance | null {
+  if (!value) {
+    return null;
+  }
+  try {
+    const parsed = buttonAppearanceSchema.safeParse(JSON.parse(value));
+    return parsed.success ? parsed.data : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeAppearanceJson(appearance: ButtonAppearance | null | undefined): string | null | undefined {
+  if (appearance === undefined) {
+    return undefined;
+  }
+  if (appearance === null) {
+    return null;
+  }
+  const parsed = buttonAppearanceSchema.safeParse(appearance);
+  if (!parsed.success) {
+    throw new AppError('INVALID_INPUT', 'Button appearance must define normal, hover, active and pressed colours.');
+  }
+  return JSON.stringify(parsed.data);
+}
+
 function toButton(row: ButtonRow, action: ActionRecord | null): DeckButtonWithAction {
   return {
     id: row.id,
@@ -26,6 +55,7 @@ function toButton(row: ButtonRow, action: ActionRecord | null): DeckButtonWithAc
     icon: (row.icon ?? null) as DeckButtonWithAction['icon'],
     backgroundColor: row.backgroundColor,
     textColor: row.textColor,
+    appearance: readAppearanceJson(row.appearanceJson),
     isEnabled: row.isEnabled,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -73,6 +103,7 @@ export function createButton(db: ConDeckDb, input: CreateButtonInput): DeckButto
       icon: input.icon ?? null,
       backgroundColor: input.backgroundColor ?? DEFAULT_BUTTON_BACKGROUND,
       textColor: input.textColor ?? DEFAULT_BUTTON_TEXT_COLOR,
+      appearanceJson: writeAppearanceJson(input.appearance) ?? null,
       isEnabled: input.isEnabled ?? true,
     })
     .returning()
@@ -106,6 +137,9 @@ export function updateButton(db: ConDeckDb, input: UpdateButtonInput): DeckButto
       ...(input.icon !== undefined ? { icon: input.icon } : {}),
       ...(input.backgroundColor !== undefined ? { backgroundColor: input.backgroundColor } : {}),
       ...(input.textColor !== undefined ? { textColor: input.textColor } : {}),
+      ...(input.appearance !== undefined
+        ? { appearanceJson: writeAppearanceJson(input.appearance) ?? null }
+        : {}),
       ...(input.isEnabled !== undefined ? { isEnabled: input.isEnabled } : {}),
       updatedAt: new Date().toISOString(),
     })
@@ -147,6 +181,7 @@ export function duplicateButton(
         icon: source.icon,
         backgroundColor: source.backgroundColor,
         textColor: source.textColor,
+        appearanceJson: source.appearanceJson,
         isEnabled: source.isEnabled,
       })
       .returning()

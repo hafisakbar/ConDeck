@@ -15,6 +15,7 @@ import {
 import type { ConDeckDb } from '../client';
 import { buttons, decks, pages } from '../schema';
 import { actionsByButtonIds } from './actions';
+import { readAppearanceJson } from './buttons';
 
 type DeckRow = typeof decks.$inferSelect;
 type PageRow = typeof pages.$inferSelect;
@@ -43,6 +44,7 @@ function toButton(row: ButtonRow, action: ActionRecord | null): DeckButtonWithAc
     icon: (row.icon ?? null) as DeckButtonWithAction['icon'],
     backgroundColor: row.backgroundColor,
     textColor: row.textColor,
+    appearance: readAppearanceJson(row.appearanceJson),
     isEnabled: row.isEnabled,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,

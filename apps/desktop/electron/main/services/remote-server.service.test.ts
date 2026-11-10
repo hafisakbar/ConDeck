@@ -564,6 +564,7 @@ describe('remote control', () => {
       scenes: ['Main'],
       isStreaming: true,
       isRecording: false,
+      mutedInputs: {},
     };
     server?.broadcastObsStatus();
 

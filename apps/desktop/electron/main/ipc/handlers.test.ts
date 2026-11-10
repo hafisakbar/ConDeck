@@ -99,6 +99,7 @@ beforeEach(() => {
     scenes: [],
     isStreaming: false,
     isRecording: false,
+    mutedInputs: {},
   };
 
   obsService = {

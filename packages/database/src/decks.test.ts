@@ -241,6 +241,73 @@ describe('buttons', () => {
   });
 });
 
+describe('button appearance', () => {
+  it('persists per-state colours and returns them with the deck detail', () => {
+    const { pageId, deckId } = seedDeck(5, 3);
+    const appearance = {
+      normal: {
+        backgroundColor: '#123a2b',
+        textColor: '#e8ebf2',
+        borderColor: '#2a2f3a',
+        glowColor: '#123a2b',
+        glowIntensity: 0.25,
+      },
+      hover: {
+        backgroundColor: '#123a2b',
+        textColor: '#e8ebf2',
+        borderColor: '#3a6a52',
+        glowColor: '#34c17b',
+        glowIntensity: 0.5,
+      },
+      active: {
+        backgroundColor: '#0d2a1f',
+        textColor: '#ffffff',
+        borderColor: '#34c17b',
+        glowColor: '#34c17b',
+        glowIntensity: 0.85,
+      },
+      pressed: {
+        backgroundColor: '#081a13',
+        textColor: '#ffffff',
+        borderColor: '#7bf0b4',
+        glowColor: '#7bf0b4',
+        glowIntensity: 1,
+      },
+    };
+
+    const created = createButton(database.db, {
+      pageId,
+      position: 0,
+      label: 'Record',
+      backgroundColor: '#123a2b',
+      textColor: '#e8ebf2',
+      appearance,
+    });
+    expect(created.appearance).toEqual(appearance);
+
+    const detail = getDeckDetail(database.db, deckId);
+    expect(detail.pages[0]?.buttons[0]?.appearance).toEqual(appearance);
+
+    const copy = duplicateButton(database.db, { buttonId: created.id, position: 1 });
+    expect(copy.appearance).toEqual(appearance);
+
+    const cleared = updateButton(database.db, { buttonId: created.id, appearance: null });
+    expect(cleared.appearance).toBeNull();
+  });
+
+  it('rejects an appearance that is not a complete four-state palette', () => {
+    const { pageId } = seedDeck();
+    expect(() =>
+      createButton(database.db, {
+        pageId,
+        position: 0,
+        label: 'Broken',
+        appearance: { normal: {} } as never,
+      }),
+    ).toThrowError(AppError);
+  });
+});
+
 describe('profile deletion', () => {
   it('hands the active flag to the remaining profile and removes its decks', () => {
     const first = createProfile(database.db, { name: 'Streaming' });

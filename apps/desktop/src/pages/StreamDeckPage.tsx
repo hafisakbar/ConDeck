@@ -1,11 +1,12 @@
 import type { DeckButtonWithAction } from '@condeck/shared';
 import { LayoutGrid, Plus } from 'lucide-react';
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeckFormDialog, type DeckFormValues } from '../components/deck/DeckFormDialog';
 import { ButtonPropertiesPanel } from '../components/stream-deck/ButtonPropertiesPanel';
 import { DeckLayoutDialog, type LayoutDraft } from '../components/stream-deck/DeckLayoutDialog';
 import { DeviceToolbar } from '../components/stream-deck/DeviceToolbar';
 import { StreamDeckFallback } from '../components/stream-deck/StreamDeckFallback';
+import type { StreamDeckViewHandle } from '../components/stream-deck/StreamDeckScene';
 import { supportsWebGL } from '../components/stream-deck/webgl';
 
 // three.js only loads for the device workspace, keeping the other pages light.
@@ -34,6 +35,7 @@ import {
 import { useAppStore } from '../stores/app-store';
 import { useDeckStore } from '../stores/deck-store';
 import { useNavigationStore } from '../stores/navigation-store';
+import { useObsStore } from '../stores/obs-store';
 
 type DialogKind =
   | 'create-deck'
@@ -62,6 +64,12 @@ export function StreamDeckPage() {
   const error = useDeckStore((state) => state.error);
   const catalog = useDeckStore((state) => state.catalog);
   const executions = useDeckStore((state) => state.executions);
+  const appearanceDraft = useDeckStore((state) => state.appearanceDraft);
+  const previewAppearance = useDeckStore((state) => state.previewAppearance);
+  const clearAppearanceDrafts = useDeckStore((state) => state.clearAppearanceDrafts);
+
+  const obs = useObsStore((state) => state.snapshot);
+  const initializeObs = useObsStore((state) => state.initialize);
 
   const load = useDeckStore((state) => state.load);
   const selectDeck = useDeckStore((state) => state.selectDeck);
@@ -95,6 +103,7 @@ export function StreamDeckPage() {
   const [nameDraft, setNameDraft] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
   const [webgl] = useState(() => supportsWebGL());
+  const viewRef = useRef<StreamDeckViewHandle | null>(null);
 
   useEffect(() => {
     void load(profileId);
@@ -103,6 +112,11 @@ export function StreamDeckPage() {
   useEffect(() => {
     void loadCatalog();
   }, [loadCatalog]);
+
+  // Active key colours follow the real OBS status, not the last click.
+  useEffect(() => {
+    void initializeObs();
+  }, [initializeObs]);
 
   useEffect(() => {
     saveWorkspaceMode(mode);
@@ -146,8 +160,8 @@ export function StreamDeckPage() {
     () => buttonLayout(columns, rows, preferences.buttonScale, preferences.gapScale),
     [columns, rows, preferences.buttonScale, preferences.gapScale],
   );
-  const scale = fitScale(columns, rows) * preferences.zoom;
-  const zoomPercent = Math.round(scale * 100);
+  const scale = fitScale(columns, rows);
+  const zoomPercent = Math.round(preferences.zoom * 100);
 
   const openDialog = useCallback((kind: DialogKind, initialName = '') => {
     setFormError(null);
@@ -171,7 +185,18 @@ export function StreamDeckPage() {
   function handleClosePanel(): void {
     setSlot(null);
     selectButton(null);
+    clearAppearanceDrafts();
   }
+
+  const handleViewReady = useCallback((view: StreamDeckViewHandle | null) => {
+    viewRef.current = view;
+  }, []);
+
+  const handleZoomChange = useCallback((zoom: number) => {
+    setPreferences((current) =>
+      Math.abs(current.zoom - zoom) < 0.01 ? current : { ...current, zoom },
+    );
+  }, []);
 
   async function handleCreateButton(position: number): Promise<void> {
     const created = await createButton(position);
@@ -266,8 +291,13 @@ export function StreamDeckPage() {
                 layout={layout}
                 selectedButtonId={selectedButtonId}
                 executions={executions}
+                  appearanceDraft={appearanceDraft}
+                  obs={obs}
                   operate={mode === 'operate'}
                   scale={scale}
+                  zoom={preferences.zoom}
+                  onZoomChange={handleZoomChange}
+                  onViewReady={handleViewReady}
                   onSelect={handleSelect}
                   onActivate={(buttonId) => void executeButton(buttonId)}
                 />
@@ -279,6 +309,7 @@ export function StreamDeckPage() {
                 buttons={activePage.buttons}
                 selectedButtonId={selectedButtonId}
                 executions={executions}
+                obs={obs}
                 onSelect={handleSelect}
                 onActivate={(buttonId) => void executeButton(buttonId)}
               />
@@ -309,13 +340,19 @@ export function StreamDeckPage() {
               onDeletePage={() => openDialog('delete-page')}
               onModeChange={setMode}
               onOpenLayout={() => setLayoutOpen(true)}
-              onZoomIn={() =>
-                setPreferences((current) => ({ ...current, zoom: clamp(current.zoom + 0.1, 0.55, 1.6) }))
-              }
-              onZoomOut={() =>
-                setPreferences((current) => ({ ...current, zoom: clamp(current.zoom - 0.1, 0.55, 1.6) }))
-              }
-              onFit={() => setPreferences((current) => ({ ...current, zoom: 1 }))}
+              onZoomIn={() => {
+                const next = clamp(preferences.zoom + 0.1, 0.55, 1.6);
+                viewRef.current?.setZoom(next);
+              }}
+              onZoomOut={() => {
+                const next = clamp(preferences.zoom - 0.1, 0.55, 1.6);
+                viewRef.current?.setZoom(next);
+              }}
+              onResetView={() => viewRef.current?.reset()}
+              onFit={() => {
+                viewRef.current?.fit();
+                setPreferences((current) => ({ ...current, zoom: 1 }));
+              }}
             />
           </div>
 
@@ -366,7 +403,18 @@ export function StreamDeckPage() {
         execution={panelButton ? executions[panelButton.id] : undefined}
         onClose={handleClosePanel}
         onCreate={(position) => void handleCreateButton(position)}
-        onSave={(patch) => void updateButton(patch)}
+        onSave={(patch) => {
+          void updateButton(patch).then((ok) => {
+            if (ok && panelButton) {
+              previewAppearance(panelButton.id, null);
+            }
+          });
+        }}
+        onPreviewAppearance={(appearance) => {
+          if (panelButton) {
+            previewAppearance(panelButton.id, appearance);
+          }
+        }}
         onDuplicate={(position) => void duplicateButton(position)}
         onDelete={() => openDialog('delete-button')}
         onSaveAction={(buttonId, actionType, config) => void saveAction({ buttonId, actionType, config })}

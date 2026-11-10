@@ -1,8 +1,9 @@
-import type { DeckButtonWithAction } from '@condeck/shared';
+import type { ButtonAppearance, DeckButtonWithAction, ObsSnapshot } from '@condeck/shared';
 import { ContactShadows, RoundedBox } from '@react-three/drei';
 import { useMemo } from 'react';
 import * as THREE from 'three';
 import type { ExecutionState } from '../../stores/deck-store';
+import { isButtonActive } from '../../lib/button-status';
 import { StreamDeckButton3D } from './StreamDeckButton3D';
 import { slotPosition, type ButtonLayout } from './grid-layout';
 
@@ -35,6 +36,8 @@ export interface StreamDeckDeviceProps {
   layout: ButtonLayout;
   selectedButtonId: string | null;
   executions: Record<string, ExecutionState>;
+  appearanceDraft: Record<string, ButtonAppearance>;
+  obs: ObsSnapshot | null;
   operate: boolean;
   onSelect: (position: number, buttonId: string | null) => void;
   onActivate: (buttonId: string) => void;
@@ -53,6 +56,8 @@ export function StreamDeckDevice({
   layout,
   selectedButtonId,
   executions,
+  appearanceDraft,
+  obs,
   operate,
   onSelect,
   onActivate,
@@ -131,6 +136,8 @@ export function StreamDeckDevice({
             rows={rows}
             layout={layout}
             selected={button !== null && button.id === selectedButtonId}
+            active={button !== null && isButtonActive(button, obs)}
+            appearance={button ? (appearanceDraft[button.id] ?? button.appearance) : null}
             execution={button ? executions[button.id] : undefined}
             operate={operate}
             onSelect={onSelect}

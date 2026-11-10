@@ -78,6 +78,7 @@ export function createObsService({
         scenes: [],
         isStreaming: false,
         isRecording: false,
+        mutedInputs: {},
       };
     }
 
@@ -97,6 +98,7 @@ export function createObsService({
         scenes: [],
         isStreaming: false,
         isRecording: false,
+        mutedInputs: {},
       };
     }
 
@@ -109,6 +111,7 @@ export function createObsService({
         scenes: [],
         isStreaming: false,
         isRecording: false,
+        mutedInputs: {},
       };
     }
 
@@ -120,6 +123,7 @@ export function createObsService({
       scenes: status.scenes,
       isStreaming: status.isStreaming,
       isRecording: status.isRecording,
+      mutedInputs: status.mutedInputs,
     };
   }
 

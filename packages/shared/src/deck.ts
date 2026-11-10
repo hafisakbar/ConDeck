@@ -54,6 +54,56 @@ export const hexColorSchema = z
 export const DEFAULT_BUTTON_BACKGROUND = '#1b2030';
 export const DEFAULT_BUTTON_TEXT_COLOR = '#e8ebf2';
 
+export const buttonVisualStates = ['normal', 'hover', 'active', 'pressed'] as const;
+export const buttonVisualStateSchema = z.enum(buttonVisualStates);
+export type ButtonVisualState = z.infer<typeof buttonVisualStateSchema>;
+
+/** Appearance of one key in one interaction state; every colour is a hex string. */
+export const buttonAppearanceStateSchema = z.strictObject({
+  backgroundColor: hexColorSchema,
+  textColor: hexColorSchema,
+  borderColor: hexColorSchema,
+  glowColor: hexColorSchema,
+  /** 0 = no glow, 1 = strongest glow the renderer allows. */
+  glowIntensity: z.number().min(0).max(1),
+});
+export type ButtonAppearanceState = z.infer<typeof buttonAppearanceStateSchema>;
+
+export const buttonAppearanceSchema = z.strictObject({
+  normal: buttonAppearanceStateSchema,
+  hover: buttonAppearanceStateSchema,
+  active: buttonAppearanceStateSchema,
+  pressed: buttonAppearanceStateSchema,
+});
+export type ButtonAppearance = z.infer<typeof buttonAppearanceSchema>;
+
+/**
+ * Appearance used when a button has none stored. It derives from the legacy
+ * background/text colours so existing decks keep their look after the upgrade.
+ */
+export function defaultButtonAppearance(
+  backgroundColor: string = DEFAULT_BUTTON_BACKGROUND,
+  textColor: string = DEFAULT_BUTTON_TEXT_COLOR,
+): ButtonAppearance {
+  const base = { backgroundColor, textColor, glowColor: backgroundColor };
+  return {
+    normal: { ...base, borderColor: '#2a2f3a', glowIntensity: 0.35 },
+    hover: { ...base, borderColor: '#4a4258', glowIntensity: 0.6 },
+    active: { ...base, borderColor: '#8a70ff', glowIntensity: 0.9 },
+    pressed: { ...base, borderColor: '#a996ff', glowIntensity: 1 },
+  };
+}
+
+/** Reads a stored appearance, falling back to the derived default. */
+export function parseButtonAppearance(
+  value: unknown,
+  backgroundColor: string,
+  textColor: string,
+): ButtonAppearance {
+  const parsed = buttonAppearanceSchema.safeParse(value);
+  return parsed.success ? parsed.data : defaultButtonAppearance(backgroundColor, textColor);
+}
+
 /**
  * Curated icon identifiers. The database stores the identifier only; the renderer
  * maps it to a Lucide component (lib/button-icons.ts).
@@ -141,6 +191,8 @@ export const deckButtonSchema = z.object({
   backgroundColor: hexColorSchema,
   textColor: hexColorSchema,
   isEnabled: z.boolean(),
+  /** Per-state colours; null means "derive from backgroundColor/textColor". */
+  appearance: buttonAppearanceSchema.nullable(),
   createdAt: isoTimestampSchema,
   updatedAt: isoTimestampSchema,
 });
@@ -232,6 +284,7 @@ export const createButtonInputSchema = z.object({
   backgroundColor: hexColorSchema.default(DEFAULT_BUTTON_BACKGROUND),
   textColor: hexColorSchema.default(DEFAULT_BUTTON_TEXT_COLOR),
   isEnabled: z.boolean().default(true),
+  appearance: buttonAppearanceSchema.optional(),
 });
 export type CreateButtonInput = z.input<typeof createButtonInputSchema>;
 
@@ -244,6 +297,7 @@ export const updateButtonInputSchema = z
     backgroundColor: hexColorSchema.optional(),
     textColor: hexColorSchema.optional(),
     isEnabled: z.boolean().optional(),
+    appearance: buttonAppearanceSchema.nullable().optional(),
   })
   .refine(
     (value) =>
@@ -252,7 +306,8 @@ export const updateButtonInputSchema = z
       value.icon !== undefined ||
       value.backgroundColor !== undefined ||
       value.textColor !== undefined ||
-      value.isEnabled !== undefined,
+      value.isEnabled !== undefined ||
+      value.appearance !== undefined,
     'Provide at least one field to update.',
   );
 export type UpdateButtonInput = z.infer<typeof updateButtonInputSchema>;
