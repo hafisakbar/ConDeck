@@ -29,6 +29,8 @@ Landing page ConDeck adalah perangkat stream deck 3D yang bisa diputar, diperbes
 - **Bisa diputar seperti perangkat sungguhan.** Drag untuk memutar (kiri/kanan dan atas/bawah), scroll untuk zoom, dengan batas sudut dan jarak supaya perangkat tidak pernah hilang dari layar. Tombol **Reset view** mengembalikan sudut awal, **Fit** membingkai seluruh perangkat. Gestur sentuh ikut bekerja lewat OrbitControls.
 - **Tombol berperilaku fisik.** Keycap turun saat ditekan lalu naik kembali dengan easing, dan punya tampilan berbeda untuk normal, hover, selected, pressed, active, serta disabled.
 - **Warna RGB per tombol.** Setiap tombol menyimpan palette **Normal/Hover/Active/Pressed** sendiri: warna latar, teks/ikon, garis tepi, warna glow, dan intensitas glow. Panel properti punya color picker + input HEX, pratinjau langsung di perangkat 3D, dan reset per state. Perubahan disimpan ke database dan tetap ada setelah aplikasi dibuka lagi, terpisah untuk setiap profil.
+- **Hover yang stabil.** Hanya keycap yang menerima raycast; label, rim, socket dan halo hanyalah dekorasi, sehingga pointer tidak pernah berpindah mesh di atas satu tombol. Label ikut turun bersama keycap dan warnanya memakai tint material, bukan menggambar ulang tekstur tiap state. Urutan state jelas: disabled → pressed → active → selected → hover → normal.
+- **Pencahayaan merata.** Panggung memakai ambient/hemisphere rendah, dua directional dari sudut berlawanan, satu rim dari belakang dan wash lebar dari atas. Tidak ada point light di atas tombol, jadi tidak ada kolam cahaya neon di tengah perangkat dan warna RGB tiap tombol tetap menjadi sumber warna utama.
 - **Active mengikuti OBS, bukan klik terakhir.** Tombol streaming/recording menyala hanya ketika OBS benar-benar streaming/recording, tombol scene menyala saat scene itu aktif, dan tombol mute menyala sesuai status mute input di OBS. Saat OBS terputus, semua status aktif padam.
 - **Dua mode yang jelas.** `Edit` untuk memilih dan mengonfigurasi tombol; `Live` untuk menjalankan action. Panel properti otomatis tertutup saat masuk Live.
 - **Klik untuk mengonfigurasi.** Klik keycap (atau slot kosong) untuk membuka panel properti mengambang berisi label, ikon, warna, posisi, dan action. Tidak ada panel yang selalu memakan ruang.
@@ -174,7 +176,7 @@ Menambah perubahan schema: ubah `schema.ts` → `pnpm db:generate` → daftarkan
 
 | Lapisan            | Cakupan                                                                                                              |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Unit + integration | 238 test / 24 file — repository & migrasi database, action registry, klien OBS, remote server, protokol, UI mobile, geometri grid 3D, dan status aktif tombol. |
+| Unit + integration | 245 test / 25 file — repository & migrasi database, action registry, klien OBS, remote server, protokol, UI mobile, geometri grid 3D, status aktif tombol, dan prioritas state hover/pressed/selected. |
 | E2E                | Playwright (Chromium) menjalankan **PWA hasil build** ke server remote + SQLite sungguhan: CSP/aset, pairing QR, render deck, tekan tombol sampai feedback sukses, pairing code salah. |
 | Keamanan           | Preload hanya mengekspos `condeck`; seluruh channel yang dipakai ada di allowlist IPC.                               |
 | CI                 | Setiap PR & push ke `main`: typecheck → lint → unit/integration → build → E2E.                                       |
