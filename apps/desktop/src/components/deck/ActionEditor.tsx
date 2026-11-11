@@ -8,6 +8,8 @@ import {
 import { CheckCircle2, Loader2, Play, Save, Search, TriangleAlert, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useT, type MessageKey } from '../../i18n';
+import { useNavigationStore } from '../../stores/navigation-store';
+import { useSoundStore } from '../../stores/sound-store';
 import { cn } from '../../lib/cn';
 import { actionIcon } from '../../lib/action-icons';
 import { ActionPickerDialog } from './ActionPickerDialog';
@@ -41,6 +43,9 @@ export function ActionEditor({
   onRun,
 }: ActionEditorProps) {
   const t = useT();
+  const setView = useNavigationStore((state) => state.setView);
+  const sounds = useSoundStore((state) => state.sounds);
+  const loadSounds = useSoundStore((state) => state.load);
   const [actionType, setActionType] = useState<ActionType | ''>(button.action?.actionType ?? '');
   const [pickerOpen, setPickerOpen] = useState(false);
   const [config, setConfig] = useState<Record<string, unknown>>(button.action?.config ?? {});
@@ -54,6 +59,13 @@ export function ActionEditor({
     setConfig(button.action?.config ?? {});
     setError(null);
   }, [button]);
+
+  // The sound list is only needed by the soundboard editor, so it loads lazily.
+  useEffect(() => {
+    if (actionType === 'SOUNDBOARD_PLAY') {
+      void loadSounds();
+    }
+  }, [actionType, loadSounds]);
 
   const entry = catalog.find((item) => item.type === actionType);
   const saved = button.action;
@@ -138,6 +150,46 @@ export function ActionEditor({
           <p className="text-[11px] leading-relaxed text-content-subtle">
             {t(`action.types.${entry.type}.description`)}
           </p>
+
+          {entry.type === 'SOUNDBOARD_PLAY' ? (
+            <>
+              <Select
+                label={t('action.fields.soundId')}
+                value={typeof config.soundId === 'string' ? config.soundId : ''}
+                hint={t('action.soundHint')}
+                onChange={(event) => handleFieldChange('soundId', event.target.value)}
+              >
+                <option value="">{t('action.chooseSound')}</option>
+                {sounds.map((sound) => (
+                  <option key={sound.id} value={sound.id}>
+                    {sound.name} ({sound.format.toUpperCase()})
+                  </option>
+                ))}
+              </Select>
+
+              <Select
+                label={t('action.fields.mode')}
+                value={typeof config.mode === 'string' ? config.mode : 'restart'}
+                onChange={(event) => handleFieldChange('mode', event.target.value)}
+              >
+                <option value="restart">{t('action.modeRestart')}</option>
+                <option value="ignore">{t('action.modeIgnore')}</option>
+              </Select>
+
+              {sounds.length === 0 ? (
+                <p className="rounded-control border border-border-subtle bg-surface-raised px-2.5 py-2 text-[11px] leading-relaxed text-content-subtle">
+                  {t('sounds.noSoundsForAction')}{' '}
+                  <button
+                    type="button"
+                    className="font-medium text-accent underline"
+                    onClick={() => setView('sounds')}
+                  >
+                    {t('sounds.openLibrary')}
+                  </button>
+                </p>
+              ) : null}
+            </>
+          ) : null}
 
           {entry.fields.map((field) =>
             entry.type === 'OBS_SWITCH_SCENE' && field.key === 'sceneName' ? (

@@ -81,6 +81,9 @@ beforeEach(() => {
       openApplication: vi.fn(async () => undefined),
       openUrl: vi.fn(async () => undefined),
     },
+    soundboard: {
+      play: vi.fn(async () => 'Airhorn'),
+    },
     navigation: {
       navigate: (direction, context) => {
         navigationRequests.push({ direction, buttonId: context.buttonId });
@@ -182,6 +185,13 @@ beforeEach(() => {
     db: database.db,
     getAppInfo: () => appInfo,
     actions: createActionService({ db: database.db, ports: actionPorts }),
+    sounds: {
+      list: vi.fn(() => []),
+      import: vi.fn(async () => []),
+      remove: vi.fn(async (soundId: string) => ({ id: soundId })),
+      audio: vi.fn(async (soundId: string) => ({ soundId, dataUrl: 'data:audio/wav;base64,AA==' })),
+      play: vi.fn(() => ({ id: 'x', name: 'Airhorn' })),
+    } as unknown as import('../services/sound.service').SoundService,
     obs: obsService,
     remote: remoteService,
   });

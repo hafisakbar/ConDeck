@@ -31,6 +31,9 @@ function createPorts(overrides: Partial<ActionPorts> = {}): ActionPorts {
     navigation: {
       navigate: vi.fn(),
     },
+    soundboard: {
+      play: vi.fn(async () => 'Airhorn'),
+    },
     ...overrides,
   };
 }

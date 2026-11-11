@@ -4,6 +4,7 @@ import {
   navigationRequestSchema,
   obsSnapshotSchema,
   remoteServerStatusSchema,
+  soundPlayEventSchema,
   type ActionCatalogEntry,
   type ActionExecutionResult,
   type ActionRecord,
@@ -29,6 +30,8 @@ import {
   type RemoteServerStatus,
   type SaveObsSettingsInput,
   type SaveRemoteSettingsInput,
+  type Sound,
+  type SoundAudio,
 } from '@condeck/shared';
 
 const allowedChannels = new Set<string>(ipcChannels);
@@ -145,6 +148,25 @@ const bridge: ConDeckBridge = {
   listCustomIcons: () => invoke<CustomIcon[]>('icons:list'),
   createCustomIcon: (input) => invoke<CustomIcon>('icons:create', input),
   deleteCustomIcon: (input) => invoke<DeletedRef>('icons:delete', input),
+
+  listSounds: () => invoke<Sound[]>('sounds:list'),
+  importSounds: () => invoke<Sound[]>('sounds:import'),
+  deleteSound: (input) => invoke<DeletedRef>('sounds:delete', input),
+  getSoundAudio: (input) => invoke<SoundAudio>('sounds:get-audio', input),
+
+  onSoundPlay(listener) {
+    const handler = (_event: IpcRendererEvent, payload: unknown): void => {
+      const parsed = soundPlayEventSchema.safeParse(payload);
+      if (parsed.success) {
+        listener(parsed.data);
+      }
+    };
+
+    ipcRenderer.on('sound:play', handler);
+    return () => {
+      ipcRenderer.removeListener('sound:play', handler);
+    };
+  },
 };
 
 contextBridge.exposeInMainWorld('condeck', bridge);

@@ -70,7 +70,7 @@ export function NavigationDrawer({ open, view, onSelect, onClose }: NavigationDr
                 </span>
                 <div>
                   <p className="text-sm font-semibold tracking-tight text-content">ConDeck</p>
-                  <p className="text-[11px] text-content-subtle">Your Stream. Your Control.</p>
+                  <p className="text-[11px] text-content-subtle">{t('app.tagline')}</p>
                 </div>
               </div>
               <button

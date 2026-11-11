@@ -48,6 +48,14 @@ import {
   type CustomIcon,
 } from './custom-icons';
 import {
+  deleteSoundInputSchema,
+  getSoundAudioInputSchema,
+  soundPlayEventSchema,
+  type Sound,
+  type SoundAudio,
+  type SoundPlayEvent,
+} from './sounds';
+import {
   revokeDeviceInputSchema,
   saveRemoteSettingsInputSchema,
   type RemotePairing,
@@ -56,7 +64,12 @@ import {
 } from './remote';
 
 /** Main-to-renderer events (not part of the request/response allowlist). */
-export const ipcEvents = ['navigation:request', 'obs:status', 'remote:status'] as const;
+export const ipcEvents = [
+  'navigation:request',
+  'obs:status',
+  'remote:status',
+  'sound:play',
+] as const;
 export type IpcEvent = (typeof ipcEvents)[number];
 
 /**
@@ -105,6 +118,10 @@ export const ipcChannels = [
   'icons:list',
   'icons:create',
   'icons:delete',
+  'sounds:list',
+  'sounds:import',
+  'sounds:delete',
+  'sounds:get-audio',
 ] as const;
 
 export type IpcChannel = (typeof ipcChannels)[number];
@@ -150,6 +167,10 @@ export const ipcInputSchemas = {
   'icons:list': z.void(),
   'icons:create': createCustomIconInputSchema,
   'icons:delete': deleteCustomIconInputSchema,
+  'sounds:list': z.void(),
+  'sounds:import': z.void(),
+  'sounds:delete': deleteSoundInputSchema,
+  'sounds:get-audio': getSoundAudioInputSchema,
 } as const satisfies Record<IpcChannel, z.ZodType>;
 
 export type IpcErrorCode =
@@ -288,4 +309,12 @@ export interface ConDeckBridge {
   listCustomIcons(): Promise<IpcResult<CustomIcon[]>>;
   createCustomIcon(input: { name: string; dataUrl: string }): Promise<IpcResult<CustomIcon>>;
   deleteCustomIcon(input: { iconId: string }): Promise<IpcResult<DeletedRef>>;
+
+  listSounds(): Promise<IpcResult<Sound[]>>;
+  /** Opens the native file picker and returns the sounds that were added. */
+  importSounds(): Promise<IpcResult<Sound[]>>;
+  deleteSound(input: { soundId: string }): Promise<IpcResult<DeletedRef>>;
+  getSoundAudio(input: { soundId: string }): Promise<IpcResult<SoundAudio>>;
+  /** Subscribes to soundboard playback requests; returns the unsubscribe function. */
+  onSoundPlay(listener: (event: SoundPlayEvent) => void): () => void;
 }

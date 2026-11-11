@@ -18,6 +18,7 @@ import { Modal } from '../components/ui/Modal';
 import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel';
 import { StatusIndicator } from '../components/ui/StatusIndicator';
 import { Toggle } from '../components/ui/Toggle';
+import { useT } from '../i18n';
 import { formatDateTime, formatRelativeTime } from '../lib/format';
 import { useRemoteStore } from '../stores/remote-store';
 
@@ -44,6 +45,7 @@ function serverTone(state: string | undefined): 'online' | 'warning' | 'offline'
 }
 
 export function DevicesPage() {
+  const t = useT();
   const server = useRemoteStore((state) => state.server);
   const devices = useRemoteStore((state) => state.devices);
   const error = useRemoteStore((state) => state.error);
@@ -90,7 +92,10 @@ export function DevicesPage() {
 
   async function handleSave(): Promise<void> {
     const parsed = Number(port);
-    const saved = await saveSettings({ port: Number.isFinite(parsed) ? parsed : remoteDefaultPort, isEnabled: enabled });
+    const saved = await saveSettings({
+      port: Number.isFinite(parsed) ? parsed : remoteDefaultPort,
+      isEnabled: enabled,
+    });
     if (saved) {
       await refresh();
     }
@@ -125,30 +130,30 @@ export function DevicesPage() {
         <div className="flex items-start justify-between gap-4 rounded-panel border border-danger/40 bg-danger-soft px-4 py-3">
           <p className="text-xs text-danger">{error}</p>
           <Button variant="ghost" size="sm" onClick={dismissError}>
-            Dismiss
+            {t('devices.dismiss')}
           </Button>
         </div>
       ) : null}
 
       <Panel>
         <PanelHeader
-          title="Remote server"
-          description="Lets a phone on your local network control this deck. Nothing is exposed to the internet."
+          title={t('devices.title')}
+          description={t('devices.description')}
           action={
             <div className="flex items-center gap-3">
               <StatusIndicator
                 tone={serverTone(server?.state)}
                 label={
                   server?.state === 'running'
-                    ? `Running on port ${server.port}`
+                    ? t('devices.running', { port: server.port })
                     : server?.state === 'starting'
-                      ? 'Starting'
+                      ? t('devices.starting')
                       : server?.state === 'error'
-                        ? 'Needs attention'
-                        : 'Stopped'
+                        ? t('devices.attention')
+                        : t('devices.stopped')
                 }
               />
-              <Badge tone="accent">Phase 5</Badge>
+              <Badge tone="accent">Remote</Badge>
             </div>
           }
         />
@@ -157,20 +162,20 @@ export function DevicesPage() {
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
             <div className="space-y-4">
               <Toggle
-                label="Enable the mobile remote"
-                description="The server starts with ConDeck when this is on."
+                label={t('devices.enable')}
+                description={t('devices.enableDescription')}
                 checked={enabled}
                 disabled={busy !== null}
                 onChange={setEnabled}
               />
               <Input
-                label="Port"
+                label={t('devices.port')}
                 type="number"
                 min={1024}
                 max={65535}
                 value={port}
                 disabled={busy !== null}
-                hint="Default 43821. Change it if another program already uses that port."
+                hint={t('devices.portHint')}
                 onChange={(event) => setPort(event.target.value)}
               />
               <div className="flex flex-wrap gap-2">
@@ -180,7 +185,7 @@ export function DevicesPage() {
                   disabled={busy !== null && busy !== 'save'}
                   onClick={() => void handleSave()}
                 >
-                  Save settings
+                  {t('devices.save')}
                 </Button>
                 {running ? (
                   <Button
@@ -188,7 +193,7 @@ export function DevicesPage() {
                     disabled={busy !== null && busy !== 'stop'}
                     onClick={() => void stop()}
                   >
-                    Stop server
+                    {t('devices.stopServer')}
                   </Button>
                 ) : (
                   <Button
@@ -197,7 +202,7 @@ export function DevicesPage() {
                     disabled={!server?.isEnabled || (busy !== null && busy !== 'start')}
                     onClick={() => void start()}
                   >
-                    Start server
+                    {t('devices.startServer')}
                   </Button>
                 )}
                 <Button
@@ -205,7 +210,7 @@ export function DevicesPage() {
                   icon={<RefreshCw className="size-4" aria-hidden />}
                   onClick={() => void refresh()}
                 >
-                  Refresh
+                  {t('devices.refresh')}
                 </Button>
               </div>
             </div>
@@ -213,7 +218,7 @@ export function DevicesPage() {
             <div className="rounded-control border border-border-subtle bg-canvas px-4 py-3">
               <div className="flex items-center gap-2 text-xs font-medium text-content-muted">
                 <Wifi className="size-3.5" aria-hidden />
-                Open on your phone
+                {t('devices.openOnPhone')}
               </div>
               {server && server.addresses.length > 0 ? (
                 <>
@@ -222,36 +227,30 @@ export function DevicesPage() {
                       <li key={address} className="flex items-center justify-between gap-2">
                         <span className="min-w-0 truncate font-mono text-xs text-content">{address}</span>
                         <span className="flex shrink-0 items-center gap-1">
-                          {index === 0 ? <Badge tone="accent">Try first</Badge> : null}
+                          {index === 0 ? <Badge tone="accent">{t('devices.tryFirst')}</Badge> : null}
                           <Button
                             variant="ghost"
                             size="sm"
                             icon={<Copy className="size-3.5" aria-hidden />}
                             onClick={() => void copyAddress(address)}
                           >
-                            {copiedAddress === address ? 'Copied' : 'Copy'}
+                            {copiedAddress === address ? t('devices.copied') : t('devices.copy')}
                           </Button>
                         </span>
                       </li>
                     ))}
                   </ul>
                   <p className="mt-2 text-[11px] leading-relaxed text-content-subtle">
-                    The pairing code uses the first address. If the phone times out, try the next
-                    one: adapters such as VirtualBox, Hyper-V or a VPN appear in this list but a
-                    phone cannot reach them.
+                    {t('devices.addressHint')}
                   </p>
                 </>
               ) : (
                 <p className="mt-2 text-[11px] leading-relaxed text-content-subtle">
-                  {running
-                    ? 'No local network address was found. Connect this PC to Wi-Fi or Ethernet, then restart the server.'
-                    : 'Start the server to see the address your phone should open.'}
+                  {running ? t('devices.noAddress') : t('devices.startToSee')}
                 </p>
               )}
               <p className="mt-3 text-[11px] leading-relaxed text-content-subtle">
-                The phone must be on the same Wi-Fi or hotspot. If the page will not open, allow
-                ConDeck through Windows Firewall for private networks and turn off client isolation
-                on the router. Plain HTTP is used on the LAN, so only pair devices you trust.
+                {t('devices.firewall')}
               </p>
             </div>
           </div>
@@ -260,8 +259,8 @@ export function DevicesPage() {
 
       <Panel>
         <PanelHeader
-          title="Pair a phone"
-          description="Scan the code with the phone camera, then confirm the connection on the phone."
+          title={t('devices.pairTitle')}
+          description={t('devices.pairDescription')}
           action={
             running ? (
               <Button
@@ -269,7 +268,7 @@ export function DevicesPage() {
                 loading={busy === 'pairing'}
                 onClick={() => void createPairing()}
               >
-                {pairing ? 'New code' : 'Create pairing code'}
+                {pairing ? t('devices.newCode') : t('devices.createCode')}
               </Button>
             ) : null
           }
@@ -278,15 +277,15 @@ export function DevicesPage() {
         {!running ? (
           <EmptyState
             icon={Server}
-            title="Remote server is stopped"
-            description="Start the server above before pairing a phone."
+            title={t('devices.stoppedTitle')}
+            description={t('devices.stoppedDescription')}
           />
         ) : pairing ? (
           <PanelBody>
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
               <img
                 src={pairing.qrDataUrl}
-                alt="Pairing QR code"
+                alt={t('devices.pairingCode')}
                 width={200}
                 height={200}
                 className="rounded-control border border-border-strong bg-white p-2"
@@ -294,20 +293,22 @@ export function DevicesPage() {
               <div className="min-w-0 flex-1 space-y-3">
                 <div>
                   <p className="text-xs font-medium text-content-muted">
-                    Valid for {secondsLeft > 0 ? `${secondsLeft} more seconds` : 'no time left'}
+                    {secondsLeft > 0
+                      ? t('devices.validFor', { seconds: secondsLeft })
+                      : t('devices.noTimeLeft')}
                   </p>
                   <p className="mt-1 text-[11px] leading-relaxed text-content-subtle">
-                    The code works once. A new code replaces the previous one immediately.
+                    {t('devices.codeOnce')}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-xs font-medium text-content-muted">Link</p>
+                  <p className="text-xs font-medium text-content-muted">{t('devices.link')}</p>
                   <div className="mt-1 flex items-center gap-2">
                     <input
                       readOnly
                       value={pairing.url}
-                      aria-label="Pairing link"
+                      aria-label={t('devices.pairingLink')}
                       className="h-9 w-full min-w-0 rounded-control border border-border-strong bg-canvas px-3 font-mono text-[11px] text-content"
                       onFocus={(event) => event.currentTarget.select()}
                     />
@@ -317,13 +318,13 @@ export function DevicesPage() {
                       icon={<Copy className="size-3.5" aria-hidden />}
                       onClick={() => void copyPairingUrl()}
                     >
-                      {copied ? 'Copied' : 'Copy'}
+                      {copied ? t('devices.copied') : t('devices.copy')}
                     </Button>
                   </div>
                 </div>
 
                 <div>
-                  <p className="text-xs font-medium text-content-muted">Pairing code</p>
+                  <p className="text-xs font-medium text-content-muted">{t('devices.pairingCode')}</p>
                   <p className="mt-1 font-mono text-xs break-all text-content">{pairing.token}</p>
                 </div>
               </div>
@@ -332,28 +333,30 @@ export function DevicesPage() {
         ) : (
           <EmptyState
             icon={Smartphone}
-            title="No active pairing code"
-            description="Create a code, then scan it with the phone camera to open ConDeck Remote."
+            title={t('devices.noPairingTitle')}
+            description={t('devices.noPairingDescription')}
           />
         )}
       </Panel>
 
       <Panel>
         <PanelHeader
-          title="Paired devices"
-          description="Devices authorised to control this ConDeck instance."
+          title={t('devices.pairedTitle')}
+          description={t('devices.pairedDescription')}
           action={
             <StatusIndicator
               tone={(server?.connectedDevices.length ?? 0) > 0 ? 'online' : 'offline'}
-              label={`${server?.connectedDevices.length ?? 0} connected`}
+              label={t('devices.connectedCount', {
+                count: server?.connectedDevices.length ?? 0,
+              })}
             />
           }
         />
         {devices.length === 0 ? (
           <EmptyState
             icon={Smartphone}
-            title="No devices paired"
-            description="Pair a phone above. Each device gets its own credential, which you can revoke at any time."
+            title={t('devices.noDevicesTitle')}
+            description={t('devices.noDevicesDescription')}
           />
         ) : (
           <ul className="divide-y divide-border-subtle">
@@ -364,18 +367,22 @@ export function DevicesPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-content">{device.deviceName}</p>
                     <p className="mt-0.5 text-xs text-content-muted">
-                      {device.deviceType} · paired {formatDateTime(device.createdAt)}
+                      {device.deviceType} · {formatDateTime(device.createdAt)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <div className="text-right">
                       <Badge tone={device.isAuthorized ? (online ? 'success' : 'neutral') : 'danger'}>
-                        {device.isAuthorized ? (online ? 'Connected' : 'Authorised') : 'Revoked'}
+                        {device.isAuthorized
+                          ? online
+                            ? t('obs.CONNECTED')
+                            : t('devices.authorised')
+                          : t('devices.revoked')}
                       </Badge>
                       <p className="mt-1 text-[11px] text-content-subtle">
                         {device.lastSeenAt
-                          ? `Last seen ${formatRelativeTime(device.lastSeenAt)}`
-                          : 'Never connected'}
+                          ? t('devices.lastSeen', { time: formatRelativeTime(device.lastSeenAt) })
+                          : t('devices.neverConnected')}
                       </p>
                     </div>
                     {device.isAuthorized ? (
@@ -386,7 +393,7 @@ export function DevicesPage() {
                         disabled={busy !== null}
                         onClick={() => setPendingRevoke(device)}
                       >
-                        Revoke
+                        {t('devices.revoke')}
                       </Button>
                     ) : null}
                   </div>
@@ -399,17 +406,17 @@ export function DevicesPage() {
 
       <Modal
         open={pendingRevoke !== null}
-        title="Revoke this device?"
+        title={t('devices.revokeTitle')}
         description={
           pendingRevoke
-            ? `"${pendingRevoke.deviceName}" will be disconnected and must be paired again to control ConDeck.`
+            ? t('devices.revokeDescription', { name: pendingRevoke.deviceName })
             : undefined
         }
         onClose={() => setPendingRevoke(null)}
         footer={
           <>
             <Button variant="ghost" onClick={() => setPendingRevoke(null)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="danger"
@@ -422,15 +429,12 @@ export function DevicesPage() {
                 }
               }}
             >
-              Revoke access
+              {t('devices.revokeAccess')}
             </Button>
           </>
         }
       >
-        <p className="text-xs leading-relaxed text-content-muted">
-          The pairing code is not affected. To let this phone back in, create a new pairing code and
-          scan it again.
-        </p>
+        <p className="text-xs leading-relaxed text-content-muted">{t('devices.revokeBody')}</p>
       </Modal>
     </div>
   );

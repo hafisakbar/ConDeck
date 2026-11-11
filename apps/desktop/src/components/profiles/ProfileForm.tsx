@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useT } from '../../i18n';
 import { useAppStore } from '../../stores/app-store';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -10,6 +11,7 @@ export interface ProfileFormProps {
 }
 
 export function ProfileForm({ submitLabel, onCreated, autoFocus = false }: ProfileFormProps) {
+  const t = useT();
   const createProfile = useAppStore((state) => state.createProfile);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -20,7 +22,7 @@ export function ProfileForm({ submitLabel, onCreated, autoFocus = false }: Profi
     event.preventDefault();
     const trimmedName = name.trim();
     if (trimmedName.length === 0) {
-      setValidationError('Profile name is required.');
+      setValidationError(t('profiles.nameRequired'));
       return;
     }
 
@@ -43,8 +45,8 @@ export function ProfileForm({ submitLabel, onCreated, autoFocus = false }: Profi
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <Input
-        label="Profile name"
-        placeholder="Streaming"
+        label={t('profiles.name')}
+        placeholder={t('profiles.namePlaceholder')}
         value={name}
         maxLength={60}
         autoFocus={autoFocus}
@@ -57,8 +59,8 @@ export function ProfileForm({ submitLabel, onCreated, autoFocus = false }: Profi
         }}
       />
       <Input
-        label="Description (optional)"
-        placeholder="Main OBS layout for weekly streams"
+        label={t('profiles.descriptionLabel')}
+        placeholder={t('profiles.descriptionPlaceholder')}
         value={description}
         maxLength={240}
         onChange={(event) => setDescription(event.target.value)}

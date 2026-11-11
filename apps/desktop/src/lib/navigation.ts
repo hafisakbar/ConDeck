@@ -1,7 +1,23 @@
-import { LayoutDashboard, LayoutGrid, Layers, PlugZap, Settings, Smartphone, type LucideIcon } from 'lucide-react';
+import {
+  LayoutDashboard,
+  LayoutGrid,
+  Layers,
+  Music4,
+  PlugZap,
+  Settings,
+  Smartphone,
+  type LucideIcon,
+} from 'lucide-react';
 import type { MessageKey } from '../i18n';
 
-export type ViewId = 'dashboard' | 'decks' | 'profiles' | 'integrations' | 'devices' | 'settings';
+export type ViewId =
+  | 'dashboard'
+  | 'decks'
+  | 'profiles'
+  | 'integrations'
+  | 'sounds'
+  | 'devices'
+  | 'settings';
 
 export interface NavigationItem {
   id: ViewId;
@@ -18,6 +34,7 @@ export const navigationItems: readonly NavigationItem[] = [
   { id: 'decks', labelKey: 'nav.decks', icon: LayoutGrid },
   { id: 'profiles', labelKey: 'nav.profiles', icon: Layers },
   { id: 'integrations', labelKey: 'nav.integrations', icon: PlugZap },
+  { id: 'sounds', labelKey: 'nav.sounds', icon: Music4 },
   { id: 'devices', labelKey: 'nav.devices', icon: Smartphone },
   { id: 'settings', labelKey: 'nav.settings', icon: Settings },
 ];

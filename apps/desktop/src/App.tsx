@@ -1,9 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useEffect, useState, type ComponentType } from 'react';
 import { BootScreen } from './components/layout/BootScreen';
+import { SoundPlayer } from './components/sounds/SoundPlayer';
 import { NavigationDrawer } from './components/layout/NavigationDrawer';
 import { StartupErrorScreen } from './components/layout/StartupErrorScreen';
 import { TopBar } from './components/layout/TopBar';
+import { useT } from './i18n';
 import { cn } from './lib/cn';
 import type { ViewId } from './lib/navigation';
 import { DashboardPage } from './pages/DashboardPage';
@@ -11,6 +13,7 @@ import { DevicesPage } from './pages/DevicesPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
 import { ProfilesPage } from './pages/ProfilesPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { SoundsPage } from './pages/SoundsPage';
 import { StreamDeckPage } from './pages/StreamDeckPage';
 import { useAppStore } from './stores/app-store';
 import { useNavigationStore } from './stores/navigation-store';
@@ -21,11 +24,13 @@ const viewComponents: Record<ViewId, ComponentType> = {
   decks: StreamDeckPage,
   profiles: ProfilesPage,
   integrations: IntegrationsPage,
+  sounds: SoundsPage,
   devices: DevicesPage,
   settings: SettingsPage,
 };
 
 export default function App() {
+  const t = useT();
   const status = useAppStore((state) => state.status);
   const error = useAppStore((state) => state.error);
   const refresh = useAppStore((state) => state.refresh);
@@ -47,7 +52,7 @@ export default function App() {
   }
 
   if (status === 'error') {
-    return <StartupErrorScreen message={error ?? 'Unknown error.'} onRetry={() => void refresh()} />;
+    return <StartupErrorScreen message={error ?? t('app.unknownError')} onRetry={() => void refresh()} />;
   }
 
   const Page = viewComponents[view];
@@ -55,6 +60,7 @@ export default function App() {
 
   return (
     <div className="relative flex h-screen flex-col overflow-hidden">
+      <SoundPlayer />
       <TopBar onOpenMenu={() => setMenuOpen(true)} />
 
       <NavigationDrawer

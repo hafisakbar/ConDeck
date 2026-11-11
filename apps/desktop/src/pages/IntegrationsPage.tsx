@@ -1,7 +1,6 @@
 import {
   OBS_DEFAULT_HOST,
   OBS_DEFAULT_PORT,
-  obsSnapshotMessage,
   saveObsSettingsInputSchema,
   type SaveObsSettingsInput,
 } from '@condeck/shared';
@@ -14,10 +13,12 @@ import { Input } from '../components/ui/Input';
 import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel';
 import { StatusIndicator } from '../components/ui/StatusIndicator';
 import { Toggle } from '../components/ui/Toggle';
-import { obsLabelByState, obsToneByState } from '../lib/obs';
+import { useT } from '../i18n';
+import { obsToneByState } from '../lib/obs';
 import { useObsStore } from '../stores/obs-store';
 
 export function IntegrationsPage() {
+  const t = useT();
   const snapshot = useObsStore((state) => state.snapshot);
   const busy = useObsStore((state) => state.busy);
   const error = useObsStore((state) => state.error);
@@ -60,7 +61,7 @@ export function IntegrationsPage() {
     };
     const parsed = saveObsSettingsInputSchema.safeParse(candidate);
     if (!parsed.success) {
-      setFormError(parsed.error.issues[0]?.message ?? 'Check the form and try again.');
+      setFormError(parsed.error.issues[0]?.message ?? t('integrations.formHint'));
       return null;
     }
     setFormError(null);
@@ -95,7 +96,7 @@ export function IntegrationsPage() {
             {error}
           </span>
           <button type="button" className="font-medium underline" onClick={dismissError}>
-            Dismiss
+            {t('integrations.dismiss')}
           </button>
         </div>
       ) : null}
@@ -104,21 +105,23 @@ export function IntegrationsPage() {
         <Panel>
           <PanelHeader
             title="OBS Studio"
-            description="Connect ConDeck to OBS through OBS WebSocket v5. Enable it in OBS under Tools → WebSocket Server Settings."
-            action={<Badge tone="accent">Phase 4</Badge>}
+            description={t('integrations.obsDescription')}
+            action={<Badge tone="accent">OBS</Badge>}
           />
           <PanelBody className="space-y-4">
             <div className="rounded-control border border-border-subtle bg-surface-raised px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-content">Connection</p>
+                  <p className="text-sm font-medium text-content">{t('integrations.connection')}</p>
                   <p className="mt-0.5 text-xs break-words text-content-muted">
-                    {snapshot ? obsSnapshotMessage(snapshot) : 'Loading OBS status…'}
+                    {snapshot
+                      ? t(`obs.${snapshot.state}`)
+                      : t('integrations.loadingStatus')}
                   </p>
                 </div>
                 <StatusIndicator
                   tone={snapshot ? obsToneByState[snapshot.state] : 'offline'}
-                  label={snapshot ? obsLabelByState[snapshot.state] : 'Unknown'}
+                  label={snapshot ? t(`obs.${snapshot.state}`) : t('integrations.unknown')}
                 />
               </div>
 
@@ -126,19 +129,19 @@ export function IntegrationsPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Badge tone="neutral">
                     <ListVideo className="size-3" aria-hidden />
-                    {snapshot.sceneName ?? 'No scene'}
+                    {snapshot.sceneName ?? t('integrations.noScene')}
                   </Badge>
                   <Badge tone={snapshot.isStreaming ? 'danger' : 'neutral'}>
                     <Radio className="size-3" aria-hidden />
-                    {snapshot.isStreaming ? 'Streaming' : 'Stream idle'}
+                    {snapshot.isStreaming ? t('integrations.streaming') : t('integrations.streamIdle')}
                   </Badge>
                   <Badge tone={snapshot.isRecording ? 'danger' : 'neutral'}>
                     <Video className="size-3" aria-hidden />
-                    {snapshot.isRecording ? 'Recording' : 'Recording idle'}
+                    {snapshot.isRecording ? t('integrations.recording') : t('integrations.recordingIdle')}
                   </Badge>
                   <Badge tone={snapshot.hasPassword ? 'success' : 'neutral'}>
                     <Mic className="size-3" aria-hidden />
-                    {snapshot.hasPassword ? 'Password saved' : 'No password'}
+                    {snapshot.hasPassword ? t('integrations.passwordSaved') : t('integrations.noPassword')}
                   </Badge>
                 </div>
               ) : null}
@@ -146,36 +149,40 @@ export function IntegrationsPage() {
 
             <div className="grid gap-3 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               <Input
-                label="Host"
+                label={t('integrations.host')}
                 value={host}
                 placeholder={OBS_DEFAULT_HOST}
-                hint="Usually 127.0.0.1 when OBS runs on this computer."
+                hint={t('integrations.hostHint')}
                 onChange={(event) => setHost(event.target.value)}
               />
               <Input
-                label="Port"
+                label={t('integrations.port')}
                 type="number"
                 min={1}
                 max={65535}
                 value={port}
-                hint={`Default: ${OBS_DEFAULT_PORT}`}
+                hint={t('integrations.defaultPort', { port: OBS_DEFAULT_PORT })}
                 onChange={(event) => setPort(event.target.value)}
               />
             </div>
 
             <Input
-              label="Password"
+              label={t('integrations.password')}
               type="password"
               value={password}
               autoComplete="off"
-              placeholder={snapshot?.hasPassword ? 'Saved password — leave blank to keep' : 'Optional'}
-              hint="Stored with the Windows/macOS credential store through Electron safeStorage, never as plaintext."
+              placeholder={
+                snapshot?.hasPassword
+                  ? t('integrations.savedPasswordPlaceholder')
+                  : t('common.optional')
+              }
+              hint={t('integrations.passwordHint')}
               onChange={(event) => setPassword(event.target.value)}
             />
 
             <Toggle
-              label="Enable OBS integration"
-              description="Turn this off to keep the settings but block every OBS action."
+              label={t('integrations.enable')}
+              description={t('integrations.enableDescription')}
               checked={isEnabled}
               onChange={setIsEnabled}
             />
@@ -193,7 +200,7 @@ export function IntegrationsPage() {
               >
                 <span>{testResult.message}</span>
                 <button type="button" className="font-medium underline" onClick={dismissTestResult}>
-                  Close
+                  {t('integrations.close')}
                 </button>
               </div>
             ) : null}
@@ -205,7 +212,7 @@ export function IntegrationsPage() {
                 disabled={working}
                 onClick={() => void handleSave()}
               >
-                Save settings
+                {t('integrations.save')}
               </Button>
               <Button
                 loading={busy === 'test'}
@@ -213,7 +220,7 @@ export function IntegrationsPage() {
                 icon={<Cable className="size-3.5" aria-hidden />}
                 onClick={() => void handleTest()}
               >
-                Test connection
+                {t('integrations.test')}
               </Button>
               {isConnected ? (
                 <Button
@@ -222,7 +229,7 @@ export function IntegrationsPage() {
                   disabled={working}
                   onClick={() => void disconnect()}
                 >
-                  Disconnect
+                  {t('integrations.disconnect')}
                 </Button>
               ) : (
                 <Button
@@ -230,32 +237,26 @@ export function IntegrationsPage() {
                   disabled={working || !isConfigured || !isEnabled}
                   onClick={() => void connect()}
                 >
-                  Connect
+                  {t('integrations.connect')}
                 </Button>
               )}
               {snapshot?.hasPassword ? (
-                <Button
-                  variant="ghost"
-                  disabled={working}
-                  onClick={() => void handleSave(true)}
-                >
-                  Remove saved password
+                <Button variant="ghost" disabled={working} onClick={() => void handleSave(true)}>
+                  {t('integrations.removePassword')}
                 </Button>
               ) : null}
             </div>
 
             {!isConfigured ? (
-              <p className="text-[11px] text-content-subtle">
-                Save the host and port once, then Connect becomes available.
-              </p>
+              <p className="text-[11px] text-content-subtle">{t('integrations.saveHint')}</p>
             ) : null}
           </PanelBody>
         </Panel>
 
         <Panel>
           <PanelHeader
-            title="Scenes"
-            description="Fetched from OBS. Switch-scene actions can pick any of them."
+            title={t('integrations.scenes')}
+            description={t('integrations.scenesDescription')}
           />
           {isConnected && snapshot.scenes.length > 0 ? (
             <ul className="divide-y divide-border-subtle">
@@ -265,18 +266,20 @@ export function IntegrationsPage() {
                   className="flex items-center justify-between gap-3 px-5 py-3 text-xs text-content"
                 >
                   <span className="truncate">{scene}</span>
-                  {scene === snapshot.sceneName ? <Badge tone="success">Live</Badge> : null}
+                  {scene === snapshot.sceneName ? (
+                    <Badge tone="success">{t('integrations.live')}</Badge>
+                  ) : null}
                 </li>
               ))}
             </ul>
           ) : (
             <EmptyState
               icon={PlugZap}
-              title={isConnected ? 'OBS reports no scenes' : 'Not connected'}
+              title={isConnected ? t('integrations.noScenes') : t('integrations.notConnected')}
               description={
                 isConnected
-                  ? 'Create a scene in OBS and it will appear here automatically.'
-                  : 'Connect to OBS to load the scene list. Until then, OBS actions report “OBS is not connected”.'
+                  ? t('integrations.noscenesDescription')
+                  : t('integrations.notConnectedDescription')
               }
             />
           )}

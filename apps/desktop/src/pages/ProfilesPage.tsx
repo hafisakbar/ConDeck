@@ -8,10 +8,12 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel';
+import { useT } from '../i18n';
 import { formatDateTime } from '../lib/format';
 import { useAppStore } from '../stores/app-store';
 
 export function ProfilesPage() {
+  const t = useT();
   const profiles = useAppStore((state) => state.profiles);
   const busyProfileId = useAppStore((state) => state.busyProfileId);
   const activateProfile = useAppStore((state) => state.activateProfile);
@@ -38,7 +40,7 @@ export function ProfilesPage() {
     }
     const trimmed = name.trim();
     if (trimmed.length === 0) {
-      setFormError('Profile name is required.');
+      setFormError(t('profiles.nameRequired'));
       return;
     }
 
@@ -58,15 +60,12 @@ export function ProfilesPage() {
   return (
     <div className="grid gap-5 xl:grid-cols-3">
       <Panel className="xl:col-span-2">
-        <PanelHeader
-          title="Profiles"
-          description="The active profile supplies the deck used by desktop and mobile."
-        />
+        <PanelHeader title={t('profiles.title')} description={t('profiles.description')} />
         {profiles.length === 0 ? (
           <EmptyState
             icon={Layers}
-            title="No profiles yet"
-            description="Create your first profile to start organising decks."
+            title={t('profiles.emptyTitle')}
+            description={t('profiles.emptyDescription')}
           />
         ) : (
           <ul className="divide-y divide-border-subtle">
@@ -75,13 +74,13 @@ export function ProfilesPage() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="truncate text-sm font-medium text-content">{profile.name}</p>
-                    {profile.isActive ? <Badge tone="success">Active</Badge> : null}
+                    {profile.isActive ? <Badge tone="success">{t('profiles.active')}</Badge> : null}
                   </div>
                   <p className="mt-0.5 truncate text-xs text-content-muted">
-                    {profile.description ?? 'No description'}
+                    {profile.description ?? t('profiles.noDescription')}
                   </p>
                   <p className="mt-1 text-[11px] text-content-subtle">
-                    Created {formatDateTime(profile.createdAt)}
+                    {t('profiles.created', { date: formatDateTime(profile.createdAt) })}
                   </p>
                 </div>
 
@@ -89,8 +88,8 @@ export function ProfilesPage() {
                   <button
                     type="button"
                     onClick={() => openEdit(profile)}
-                    aria-label={`Edit ${profile.name}`}
-                    title="Edit profile"
+                    aria-label={`${t('profiles.edit')}: ${profile.name}`}
+                    title={t('profiles.edit')}
                     className="grid size-7 place-items-center rounded-control text-content-muted transition-colors hover:bg-surface-hover hover:text-content"
                   >
                     <Pencil className="size-3.5" aria-hidden />
@@ -98,8 +97,8 @@ export function ProfilesPage() {
                   <button
                     type="button"
                     onClick={() => setDeleting(profile)}
-                    aria-label={`Delete ${profile.name}`}
-                    title="Delete profile"
+                    aria-label={`${t('profiles.delete')}: ${profile.name}`}
+                    title={t('profiles.delete')}
                     className="grid size-7 place-items-center rounded-control text-content-muted transition-colors hover:bg-danger-soft hover:text-danger"
                   >
                     <Trash2 className="size-3.5" aria-hidden />
@@ -110,7 +109,7 @@ export function ProfilesPage() {
                     loading={busyProfileId === profile.id}
                     onClick={() => void activateProfile(profile.id)}
                   >
-                    {profile.isActive ? 'In use' : 'Set active'}
+                    {profile.isActive ? t('profiles.inUse') : t('profiles.setActive')}
                   </Button>
                 </div>
               </li>
@@ -120,31 +119,31 @@ export function ProfilesPage() {
       </Panel>
 
       <Panel>
-        <PanelHeader title="New profile" description="Each profile keeps its own deck and pages." />
+        <PanelHeader title={t('profiles.newTitle')} description={t('profiles.newDescription')} />
         <PanelBody>
-          <ProfileForm submitLabel="Create profile" />
+          <ProfileForm submitLabel={t('profiles.createProfile')} />
         </PanelBody>
       </Panel>
 
       <Modal
         open={editing !== null}
-        title="Edit profile"
-        description="Renaming a profile does not touch its decks."
+        title={t('profiles.editTitle')}
+        description={t('profiles.editDescription')}
         onClose={() => setEditing(null)}
         footer={
           <>
             <Button variant="ghost" onClick={() => setEditing(null)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button variant="primary" loading={saving} onClick={() => void saveEdit()}>
-              Save changes
+              {t('profiles.save')}
             </Button>
           </>
         }
       >
         <div className="space-y-3">
           <Input
-            label="Profile name"
+            label={t('profiles.name')}
             value={name}
             maxLength={60}
             autoFocus
@@ -157,7 +156,7 @@ export function ProfilesPage() {
             }}
           />
           <Input
-            label="Description (optional)"
+            label={t('profiles.descriptionLabel')}
             value={description}
             maxLength={240}
             onChange={(event) => setDescription(event.target.value)}
@@ -167,13 +166,15 @@ export function ProfilesPage() {
 
       <Modal
         open={deleting !== null}
-        title="Delete profile"
-        description={deleting ? `"${deleting.name}" and everything inside it will be removed.` : undefined}
+        title={t('profiles.deleteTitle')}
+        description={
+          deleting ? t('profiles.deleteDescription', { name: deleting.name }) : undefined
+        }
         onClose={() => setDeleting(null)}
         footer={
           <>
             <Button variant="ghost" onClick={() => setDeleting(null)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button
               variant="danger"
@@ -189,15 +190,12 @@ export function ProfilesPage() {
                 });
               }}
             >
-              Delete profile
+              {t('profiles.delete')}
             </Button>
           </>
         }
       >
-        <p className="text-xs leading-relaxed text-content-muted">
-          Its decks, pages and buttons are deleted as well. If this profile is active, the oldest
-          remaining profile becomes active. This cannot be undone.
-        </p>
+        <p className="text-xs leading-relaxed text-content-muted">{t('profiles.deleteBody')}</p>
       </Modal>
     </div>
   );

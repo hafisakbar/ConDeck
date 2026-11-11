@@ -19,7 +19,7 @@ export function Sidebar() {
         </span>
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-content">ConDeck</p>
-          <p className="truncate text-[11px] text-content-subtle">Your Stream. Your Control.</p>
+          <p className="truncate text-[11px] text-content-subtle">{t('app.tagline')}</p>
         </div>
       </div>
 
@@ -51,7 +51,9 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-border-subtle px-5 py-3">
-        <p className="text-[11px] text-content-subtle">Version {version ?? '—'}</p>
+        <p className="text-[11px] text-content-subtle">
+          {t('settings.version')} {version ?? '—'}
+        </p>
       </div>
     </aside>
   );

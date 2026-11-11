@@ -3,12 +3,14 @@ import {
   deleteButtonAction,
   getActionTarget,
   getButtonAction,
+  getSound,
   setButtonAction,
   type ConDeckDb,
 } from '@condeck/database';
 import {
   actionCatalog,
   AppError,
+  parseActionConfig,
   type ActionCatalogEntry,
   type ActionExecutionResult,
   type ActionRecord,
@@ -43,7 +45,15 @@ export function createActionService({
   return {
     catalog: () => [...actionCatalog],
 
-    setAction: (input) => setButtonAction(db, input),
+    setAction(input) {
+      if (input.actionType === 'SOUNDBOARD_PLAY') {
+        const config = parseActionConfig('SOUNDBOARD_PLAY', input.config);
+        if (!getSound(db, String(config.soundId))) {
+          throw new AppError('NOT_FOUND', 'Choose a sound from the sound library.');
+        }
+      }
+      return setButtonAction(db, input);
+    },
 
     removeAction: (buttonId) => deleteButtonAction(db, buttonId),
 

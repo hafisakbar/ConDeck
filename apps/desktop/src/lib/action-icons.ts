@@ -10,6 +10,7 @@ import {
   Radio,
   Square,
   Volume2,
+  Music4,
   type LucideIcon,
 } from 'lucide-react';
 import type { ActionType } from '@condeck/shared';
@@ -25,6 +26,7 @@ const byType: Record<ActionType, LucideIcon> = {
   OBS_SET_MUTE: Mic,
   SYSTEM_OPEN_APP: AppWindow,
   SYSTEM_OPEN_URL: Globe,
+  SOUNDBOARD_PLAY: Music4,
   NAV_NEXT_PAGE: Keyboard,
   NAV_PREV_PAGE: Clapperboard,
 };

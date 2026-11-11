@@ -87,6 +87,11 @@ export const actionDefinitions: readonly ActionDefinition[] = [
     return `Opened ${config.url}.`;
   }),
 
+  defineAction('SOUNDBOARD_PLAY', actionConfigSchemas.SOUNDBOARD_PLAY, async (config, ports) => {
+    const name = await ports.soundboard.play(config.soundId, config.mode);
+    return `Playing "${name}".`;
+  }),
+
   defineAction('NAV_NEXT_PAGE', actionConfigSchemas.NAV_NEXT_PAGE, async (_config, ports, context) => {
     await ports.navigation.navigate('next', context);
     return 'Moved to the next page.';

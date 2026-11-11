@@ -19,6 +19,7 @@ import {
   listDevices,
   listProfiles,
   listRecentActivity,
+  listSounds,
   recordActivity,
   setActiveProfile,
   updateButton,
@@ -59,10 +60,12 @@ import {
   type DeleteProfileInput,
   type DeletedRef,
   type Device,
+  type DeleteSoundInput,
   type DuplicateButtonInput,
   type ErrorCode,
   type ExecuteActionInput,
   type GetDeckInput,
+  type GetSoundAudioInput,
   type IpcChannel,
   type IpcErrorCode,
   type IpcResult,
@@ -78,6 +81,8 @@ import {
   type SaveObsSettingsInput,
   type SaveRemoteSettingsInput,
   type SetActionInput,
+  type Sound,
+  type SoundAudio,
   type SetActiveProfileInput,
   type UpdateButtonInput,
   type UpdateDeckInput,
@@ -91,12 +96,14 @@ import type { ActionService } from '../services/action.service';
 import { buildDashboardSummary } from '../services/dashboard.service';
 import type { ObsService } from '../services/obs.service';
 import type { RemoteService } from '../services/remote.service';
+import type { SoundService } from '../services/sound.service';
 
 export interface IpcContext {
   logger: FileLogger;
   db: ConDeckDb;
   getAppInfo: () => AppInfo;
   actions: ActionService;
+  sounds: SoundService;
   obs: ObsService;
   remote: RemoteService;
 }
@@ -128,6 +135,7 @@ export function registerIpcHandlers({
   db,
   getAppInfo,
   actions,
+  sounds,
   obs,
   remote,
 }: IpcContext): void {
@@ -530,6 +538,35 @@ export function registerIpcHandlers({
     });
     return { id: input.iconId };
   });
+
+  // ------------------------------------------------------------ soundboard
+
+  handle<void, Sound[]>('sounds:list', () => sounds.list());
+
+  handle<void, Sound[]>('sounds:import', async () => {
+    const imported = await sounds.import();
+    for (const sound of imported) {
+      recordActivity(db, {
+        eventType: 'SOUND_IMPORTED',
+        description: `Sound "${sound.name}" added`,
+        metadata: { soundId: sound.id, format: sound.format, byteSize: sound.byteSize },
+      });
+    }
+    return imported;
+  });
+
+  handle<DeleteSoundInput, DeletedRef>('sounds:delete', async (input) => {
+    const sound = listSounds(db).find((entry) => entry.id === input.soundId);
+    await sounds.remove(input.soundId);
+    recordActivity(db, {
+      eventType: 'SOUND_DELETED',
+      description: sound ? `Sound "${sound.name}" removed` : 'Sound removed',
+      metadata: { soundId: input.soundId },
+    });
+    return { id: input.soundId };
+  });
+
+  handle<GetSoundAudioInput, SoundAudio>('sounds:get-audio', (input) => sounds.audio(input.soundId));
 
   logger.info('IPC handlers registered', { channels: Object.keys(ipcInputSchemas) });
 }
