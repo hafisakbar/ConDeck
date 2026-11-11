@@ -7,11 +7,12 @@ import { resolveButtonIcon } from '../../lib/button-icons';
 const TEXTURE_SIZE = 512;
 const ICON_SIZE = 186;
 const LABEL_FONT = '600 54px "Segoe UI", Inter, system-ui, sans-serif';
+/** Drawn in white so the material can tint it without rebuilding the canvas. */
+const FACE_INK = '#ffffff';
 
 export interface ButtonFaceOptions {
   label: string | null;
   icon: ButtonIconName | null;
-  textColor: string;
   empty: boolean;
 }
 
@@ -46,10 +47,11 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
   context.clearRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.fillStyle = options.textColor;
+  context.fillStyle = FACE_INK;
 
   if (options.empty) {
-    context.strokeStyle = 'rgba(226, 232, 240, 0.42)';
+    context.strokeStyle = FACE_INK;
+    context.globalAlpha = 0.55;
     context.lineWidth = 6;
     context.beginPath();
     context.moveTo(TEXTURE_SIZE / 2 - 34, TEXTURE_SIZE / 2);
@@ -57,6 +59,7 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
     context.moveTo(TEXTURE_SIZE / 2, TEXTURE_SIZE / 2 - 34);
     context.lineTo(TEXTURE_SIZE / 2, TEXTURE_SIZE / 2 + 34);
     context.stroke();
+    context.globalAlpha = 1;
     return;
   }
 
@@ -67,7 +70,7 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
           const Icon = resolveButtonIcon(options.icon);
           return Icon
             ? renderToStaticMarkup(
-                createElement(Icon, { size: ICON_SIZE, color: options.textColor, strokeWidth: 1.7 }),
+                createElement(Icon, { size: ICON_SIZE, color: FACE_INK, strokeWidth: 1.7 }),
               )
             : null;
         })()
@@ -100,11 +103,13 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
 
 /**
  * Renders the face of one physical button into a canvas texture: the stored icon
- * plus its label, in the button's own text colour. Kept outside React's render
- * tree so 64 buttons never become 64 DOM overlays over the 3D scene.
+ * plus its label, always in white. Colour is a material tint instead of part of
+ * the drawing, so hovering a key never re-rasterises 64 canvases, and the label
+ * fades between states instead of popping. Kept outside React's render tree so
+ * the deck never becomes dozens of DOM overlays.
  */
 export function useButtonFaceTexture(options: ButtonFaceOptions): THREE.CanvasTexture {
-  const key = `${options.empty ? 'empty' : 'face'}|${options.label ?? ''}|${options.icon ?? ''}|${options.textColor}`;
+  const key = `${options.empty ? 'empty' : 'face'}|${options.label ?? ''}|${options.icon ?? ''}`;
   const [revision, setRevision] = useState(0);
 
   const { canvas, texture } = useMemo(() => {
