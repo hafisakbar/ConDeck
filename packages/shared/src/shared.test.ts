@@ -31,7 +31,7 @@ describe('dashboard summary schema', () => {
   it('rejects a summary whose profile total is negative', () => {
     const result = dashboardSummarySchema.safeParse({
       app: {
-        name: 'ConDeck',
+        name: 'StreamKey',
         version: '0.1.0',
         platform: 'win32',
         isPackaged: false,

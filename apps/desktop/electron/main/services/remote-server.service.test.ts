@@ -257,7 +257,7 @@ describe('remote server http surface', () => {
     expect(response.status).toBe(200);
     expect(JSON.parse(response.body)).toEqual({
       ok: true,
-      name: 'ConDeck',
+      name: 'StreamKey',
       protocolVersion: 1,
     });
   });

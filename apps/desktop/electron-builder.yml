@@ -1,6 +1,6 @@
 appId: com.condeck.app
-productName: ConDeck
-copyright: Copyright © 2026 ConDeck
+productName: StreamKey
+copyright: Copyright © 2026 StreamKey
 
 # Output lands in <repo>/release (gitignored). The Windows build is produced by
 # `pnpm dist:win` locally or by .github/workflows/release.yml on windows-latest.
@@ -27,7 +27,7 @@ win:
       arch:
         - x64
   icon: build/icon.png
-  artifactName: ConDeck-${version}-${arch}.${ext}
+  artifactName: StreamKey-${version}-${arch}.${ext}
 
 nsis:
   oneClick: false
@@ -36,8 +36,8 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: ConDeck
-  uninstallDisplayName: ConDeck ${version}
+  shortcutName: StreamKey
+  uninstallDisplayName: StreamKey ${version}
   deleteAppDataOnUninstall: false
 
 npmRebuild: true

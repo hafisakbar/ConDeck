@@ -32,6 +32,6 @@ jobs:
       - name: Upload the installer
         uses: actions/upload-artifact@v4
         with:
-          name: condeck-windows-installer
+          name: streamkey-windows-installer
           path: release/*.exe
           if-no-files-found: error

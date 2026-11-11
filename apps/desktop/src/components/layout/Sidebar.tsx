@@ -1,5 +1,5 @@
-import { Grid2x2 } from 'lucide-react';
 import { useT } from '../../i18n';
+import { BrandLogo } from './BrandLogo';
 import { cn } from '../../lib/cn';
 import { navigationItems } from '../../lib/navigation';
 import { useAppStore } from '../../stores/app-store';
@@ -15,10 +15,10 @@ export function Sidebar() {
     <aside className="flex w-60 shrink-0 flex-col border-r border-border-subtle bg-surface">
       <div className="flex items-center gap-2.5 px-5 py-5">
         <span className="grid size-9 place-items-center rounded-control bg-accent-soft text-accent">
-          <Grid2x2 className="size-4.5" aria-hidden />
+          <BrandLogo className="size-6" />
         </span>
         <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-content">ConDeck</p>
+          <p className="truncate text-sm font-semibold text-content">StreamKey</p>
           <p className="truncate text-[11px] text-content-subtle">{t('app.tagline')}</p>
         </div>
       </div>

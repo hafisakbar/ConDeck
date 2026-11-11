@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { app, BrowserWindow, shell } from 'electron';
 
 export interface MainWindowOptions {
@@ -21,7 +22,9 @@ export function createMainWindow({ preloadPath, indexPath, devServerUrl }: MainW
     minHeight: 700,
     show: false,
     backgroundColor: '#0a0c11',
-    title: 'ConDeck',
+    title: 'StreamKey',
+    // Packaged builds take the icon embedded in the executable.
+    icon: app.isPackaged ? undefined : join(app.getAppPath(), 'build', 'icon.png'),
     autoHideMenuBar: true,
     webPreferences: {
       preload: preloadPath,

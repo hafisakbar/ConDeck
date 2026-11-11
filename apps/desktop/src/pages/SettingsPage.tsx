@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Grid2x2 } from 'lucide-react';
+import { BrandLogo } from '../components/layout/BrandLogo';
 import { Panel, PanelBody } from '../components/ui/Panel';
 import { useT } from '../i18n';
 import { useAppStore } from '../stores/app-store';
@@ -24,17 +24,17 @@ export function SettingsPage() {
       <Panel>
         <div className="flex items-start gap-4 border-b border-border-subtle px-5 py-5">
           <span className="grid size-12 shrink-0 place-items-center rounded-panel bg-accent-soft text-accent">
-            <Grid2x2 className="size-6" aria-hidden />
+            <BrandLogo className="size-8" />
           </span>
           <div className="min-w-0">
-            <h1 className="text-lg font-semibold text-content">ConDeck</h1>
+            <h1 className="text-lg font-semibold text-content">StreamKey</h1>
             <p className="mt-1 text-xs leading-relaxed text-content-muted">{t('settings.descriptionText')}</p>
             <p className="mt-2 text-[11px] text-content-subtle">{t('settings.copyright', { year })}</p>
           </div>
         </div>
         <PanelBody>
           <dl>
-            <InfoRow label={t('settings.application')}>{appInfo?.name ?? 'ConDeck'}</InfoRow>
+            <InfoRow label={t('settings.application')}>{appInfo?.name ?? 'StreamKey'}</InfoRow>
             <InfoRow label={t('settings.version')}>{appInfo?.version ?? '—'}</InfoRow>
             <InfoRow label={t('settings.platform')}>{appInfo?.platform ?? '—'}</InfoRow>
             <InfoRow label={t('settings.build')}>

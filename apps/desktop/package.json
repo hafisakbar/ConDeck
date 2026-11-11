@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "ConDeck Desktop — host application (Electron + React).",
-  "author": "ConDeck",
+  "description": "StreamKey Desktop — host application (Electron + React).",
+  "author": "StreamKey",
   "main": "dist-electron/main/index.cjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",

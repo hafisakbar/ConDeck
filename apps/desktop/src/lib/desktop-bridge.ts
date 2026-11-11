@@ -25,7 +25,7 @@ export function getBridge(): ConDeckBridge {
   if (!bridge) {
     throw new BridgeError(
       'BRIDGE_UNAVAILABLE',
-      'ConDeck desktop services are not available. Start the app through Electron instead of a plain browser.',
+      'StreamKey desktop services are not available. Start the app through Electron instead of a plain browser.',
     );
   }
   return bridge;

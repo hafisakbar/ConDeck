@@ -1,7 +1,7 @@
 {
-  "name": "ConDeck Remote",
-  "short_name": "ConDeck",
-  "description": "Control your ConDeck deck from your phone.",
+  "name": "StreamKey Remote",
+  "short_name": "StreamKey",
+  "description": "Control your StreamKey deck from your phone.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

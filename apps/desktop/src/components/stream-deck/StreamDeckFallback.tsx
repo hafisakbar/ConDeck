@@ -130,7 +130,7 @@ export function StreamDeckFallback({
             );
           })}
         </div>
-        <p className="mt-4 text-center text-[10px] tracking-[0.3em] text-white/25 uppercase">ConDeck</p>
+        <p className="mt-4 text-center text-[10px] tracking-[0.3em] text-white/25 uppercase">StreamKey</p>
       </div>
     </div>
   );

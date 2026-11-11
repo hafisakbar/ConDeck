@@ -1,10 +1,11 @@
-import { Grid2x2, Menu, RefreshCw, X } from 'lucide-react';
+import { Menu, RefreshCw, X } from 'lucide-react';
 import { useT } from '../../i18n';
 import { getNavigationItem } from '../../lib/navigation';
 import { obsToneByState } from '../../lib/obs';
 import { useAppStore } from '../../stores/app-store';
 import { useNavigationStore } from '../../stores/navigation-store';
 import { StatusIndicator } from '../ui/StatusIndicator';
+import { BrandLogo } from './BrandLogo';
 import { ThemeLanguageControls } from './ThemeLanguageControls';
 
 export interface TopBarProps {
@@ -37,9 +38,9 @@ export function TopBar({ onOpenMenu }: TopBarProps) {
 
       <div className="flex min-w-0 items-center gap-2">
         <span className="grid size-6 place-items-center rounded-md bg-accent-soft text-accent">
-          <Grid2x2 className="size-3" aria-hidden />
+          <BrandLogo className="size-4" />
         </span>
-        <span className="text-sm font-semibold tracking-tight text-content">ConDeck</span>
+        <span className="text-sm font-semibold tracking-tight text-content">StreamKey</span>
         <span
           className="truncate text-[11px] text-content-subtle"
           aria-label={t('topbar.currentPage', { name: label })}

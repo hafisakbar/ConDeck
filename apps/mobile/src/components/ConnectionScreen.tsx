@@ -68,7 +68,7 @@ export function ConnectionScreen({
       return;
     }
     if (!canPair && stored === null) {
-      setFormError('Scan the QR code from ConDeck Desktop → Devices, or paste the pairing code.');
+      setFormError('Scan the QR code from StreamKey Desktop → Devices, or paste the pairing code.');
       return;
     }
 
@@ -89,7 +89,7 @@ export function ConnectionScreen({
         <div className="flex items-center gap-3">
           <BrandMark size={44} />
           <div>
-            <p className="text-lg font-semibold tracking-tight text-content">ConDeck Remote</p>
+            <p className="text-lg font-semibold tracking-tight text-content">StreamKey Remote</p>
             <p className="text-xs text-content-subtle">Your Stream. Your Control.</p>
           </div>
         </div>

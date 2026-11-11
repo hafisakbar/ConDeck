@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { buildDashboardSummary } from './dashboard.service';
 
 const appInfo: AppInfo = {
-  name: 'ConDeck',
+  name: 'StreamKey',
   version: '0.1.0-test',
   platform: 'win32 x64',
   isPackaged: false,
