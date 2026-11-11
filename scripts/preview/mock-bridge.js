@@ -126,6 +126,7 @@
       }),
     listProfiles: () => ok(clone([profile])),
     listDevices: () => ok([]),
+    listCustomIcons: () => ok([]),
     listActivity: () => ok([]),
     listDecks: () => ok([{ ...clone(deck), pageCount: 2, buttonCount: buttons.length }]),
     getDeck: () => ok({ deck: clone(deck), pages: [clone({ ...page, buttons }), clone({ ...audioPage, buttons: [] })] }),

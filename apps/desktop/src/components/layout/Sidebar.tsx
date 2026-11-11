@@ -1,10 +1,12 @@
 import { Grid2x2 } from 'lucide-react';
+import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { navigationItems } from '../../lib/navigation';
 import { useAppStore } from '../../stores/app-store';
 import { useNavigationStore } from '../../stores/navigation-store';
 
 export function Sidebar() {
+  const t = useT();
   const view = useNavigationStore((state) => state.view);
   const setView = useNavigationStore((state) => state.setView);
   const version = useAppStore((state) => state.appInfo?.version);
@@ -40,7 +42,7 @@ export function Sidebar() {
                   )}
                 >
                   <Icon className="size-4 shrink-0" aria-hidden />
-                  <span className="truncate">{item.label}</span>
+                  <span className="truncate">{t(item.labelKey)}</span>
                 </button>
               </li>
             );

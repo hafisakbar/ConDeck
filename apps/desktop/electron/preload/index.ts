@@ -10,6 +10,7 @@ import {
   type ActivityLog,
   type AppInfo,
   type ConDeckBridge,
+  type CustomIcon,
   type DashboardSummary,
   type Deck,
   type DeckButtonWithAction,
@@ -140,6 +141,10 @@ const bridge: ConDeckBridge = {
   },
 
   listActivity: (input) => invoke<ActivityLog[]>('activity:list', input ?? {}),
+
+  listCustomIcons: () => invoke<CustomIcon[]>('icons:list'),
+  createCustomIcon: (input) => invoke<CustomIcon>('icons:create', input),
+  deleteCustomIcon: (input) => invoke<DeletedRef>('icons:delete', input),
 };
 
 contextBridge.exposeInMainWorld('condeck', bridge);

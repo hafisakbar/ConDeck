@@ -182,6 +182,23 @@ export const deviceSessions = sqliteTable(
 );
 
 /**
+ * custom_icons — user uploaded key icons. The bytes are stored in the database so
+ * the icon survives restarts and profile switches without a temp folder.
+ */
+export const customIcons = sqliteTable(
+  'custom_icons',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    mimeType: text('mime_type').notNull(),
+    data: text('data').notNull(),
+    byteSize: integer('byte_size').notNull(),
+    createdAt,
+  },
+  (table) => [index('custom_icons_created_at_idx').on(table.createdAt)],
+);
+
+/**
  * activity_logs — DATABASE_DESIGN.md §4.10
  */
 export const activityLogs = sqliteTable(
@@ -209,4 +226,5 @@ export type IntegrationRow = typeof integrations.$inferSelect;
 export type DeviceRow = typeof devices.$inferSelect;
 export type DeviceSessionRow = typeof deviceSessions.$inferSelect;
 export type MediaAssetRow = typeof mediaAssets.$inferSelect;
+export type CustomIconRow = typeof customIcons.$inferSelect;
 export type ActivityLogRow = typeof activityLogs.$inferSelect;

@@ -4,6 +4,7 @@ import {
   type ActionType,
   type ButtonAppearance,
   type ButtonIconName,
+  type ButtonIcon,
   type DeckButtonWithAction,
 } from '@condeck/shared';
 import { Copy, Trash2, X } from 'lucide-react';
@@ -22,7 +23,7 @@ const HEX_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 export interface ButtonPatch {
   label?: string;
-  icon?: ButtonIconName | null;
+  icon?: ButtonIcon | null;
   backgroundColor?: string;
   textColor?: string;
   appearance?: ButtonAppearance;
@@ -66,7 +67,7 @@ export function ButtonInspector({
   onRunAction,
 }: ButtonInspectorProps) {
   const [label, setLabel] = useState(button.label);
-  const [icon, setIcon] = useState<ButtonIconName | null>(button.icon);
+  const [icon, setIcon] = useState<ButtonIcon | null>(button.icon);
   const [backgroundColor, setBackgroundColor] = useState(button.backgroundColor);
   const [textColor, setTextColor] = useState(button.textColor);
   const [appearance, setAppearance] = useState<ButtonAppearance>(

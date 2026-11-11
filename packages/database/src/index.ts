@@ -51,3 +51,9 @@ export {
   type DeviceCredentialRecord,
 } from './repositories/devices';
 export { listRecentActivity, recordActivity, type RecordActivityInput } from './repositories/activity-logs';
+export {
+  createCustomIcon,
+  deleteCustomIcon,
+  getCustomIcon,
+  listCustomIcons,
+} from './repositories/custom-icons';

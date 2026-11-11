@@ -1,5 +1,6 @@
 import type { ActivityLog } from '@condeck/shared';
 import { ScrollText } from 'lucide-react';
+import { useT } from '../../i18n';
 import { formatDateTime, formatRelativeTime } from '../../lib/format';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -9,13 +10,17 @@ export interface ActivityListProps {
   emptyDescription?: string;
 }
 
-export function ActivityList({
-  logs,
-  emptyTitle = 'No activity yet',
-  emptyDescription = 'Actions you take in ConDeck will be recorded here.',
-}: ActivityListProps) {
+export function ActivityList({ logs, emptyTitle, emptyDescription }: ActivityListProps) {
+  const t = useT();
+
   if (logs.length === 0) {
-    return <EmptyState icon={ScrollText} title={emptyTitle} description={emptyDescription} />;
+    return (
+      <EmptyState
+        icon={ScrollText}
+        title={emptyTitle ?? t('activity.emptyTitle')}
+        description={emptyDescription ?? t('activity.emptyDescription')}
+      />
+    );
   }
 
   return (

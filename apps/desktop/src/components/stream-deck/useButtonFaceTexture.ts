@@ -1,4 +1,4 @@
-import type { ButtonIconName } from '@condeck/shared';
+import type { ButtonIcon } from '@condeck/shared';
 import { createElement, useEffect, useMemo, useState } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import * as THREE from 'three';
@@ -12,7 +12,9 @@ const FACE_INK = '#ffffff';
 
 export interface ButtonFaceOptions {
   label: string | null;
-  icon: ButtonIconName | null;
+  icon: ButtonIcon | null;
+  /** Data URL of a custom uploaded icon; drawn as-is instead of a Lucide glyph. */
+  iconImageUrl?: string | null;
   empty: boolean;
 }
 
@@ -64,8 +66,9 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
   }
 
   const hasLabel = (options.label ?? '').trim().length > 0;
+  const customSource = options.iconImageUrl ?? null;
   const iconMarkup =
-    options.icon !== null
+    !customSource && options.icon !== null
       ? (() => {
           const Icon = resolveButtonIcon(options.icon);
           return Icon
@@ -75,8 +78,10 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
             : null;
         })()
       : null;
+  const iconSource = customSource ??
+    (iconMarkup ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconMarkup)}` : null);
 
-  if (iconMarkup) {
+  if (iconSource) {
     const image = new Image();
     image.onload = () => {
       context.drawImage(
@@ -88,13 +93,13 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
       );
       canvas.dispatchEvent(new Event('condeck-texture-updated'));
     };
-    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(iconMarkup)}`;
+    image.src = iconSource;
   }
 
   if (hasLabel) {
     context.font = LABEL_FONT;
     const lines = wrapLabel(context, options.label ?? '');
-    const startY = iconMarkup ? 352 : TEXTURE_SIZE / 2;
+    const startY = iconSource ? 352 : TEXTURE_SIZE / 2;
     lines.forEach((line, index) => {
       context.fillText(line, TEXTURE_SIZE / 2, startY + index * 58);
     });
@@ -109,7 +114,7 @@ function drawFace(canvas: HTMLCanvasElement, options: ButtonFaceOptions): void {
  * the deck never becomes dozens of DOM overlays.
  */
 export function useButtonFaceTexture(options: ButtonFaceOptions): THREE.CanvasTexture {
-  const key = `${options.empty ? 'empty' : 'face'}|${options.label ?? ''}|${options.icon ?? ''}`;
+  const key = `${options.empty ? 'empty' : 'face'}|${options.label ?? ''}|${options.icon ?? ''}|${options.iconImageUrl ?? ''}`;
   const [revision, setRevision] = useState(0);
 
   const { canvas, texture } = useMemo(() => {

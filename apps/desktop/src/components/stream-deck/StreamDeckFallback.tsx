@@ -1,9 +1,16 @@
-import { defaultButtonAppearance, type DeckButtonWithAction, type ObsSnapshot } from '@condeck/shared';
+import {
+  customIconId,
+  defaultButtonAppearance,
+  type DeckButtonWithAction,
+  type ObsSnapshot,
+} from '@condeck/shared';
 import { Plus } from 'lucide-react';
+import { useEffect } from 'react';
 import { isButtonActive } from '../../lib/button-status';
 import { resolveButtonIcon } from '../../lib/button-icons';
 import { cn } from '../../lib/cn';
 import type { ExecutionState } from '../../stores/deck-store';
+import { useIconStore } from '../../stores/icon-store';
 
 export interface StreamDeckFallbackProps {
   columns: number;
@@ -30,6 +37,16 @@ export function StreamDeckFallback({
   onSelect,
   onActivate,
 }: StreamDeckFallbackProps) {
+  const sources = useIconStore((state) => state.sources);
+  const status = useIconStore((state) => state.status);
+  const load = useIconStore((state) => state.load);
+
+  useEffect(() => {
+    if (status === 'idle' && buttons.some((button) => customIconId(button.icon))) {
+      void load();
+    }
+  }, [buttons, status, load]);
+
   const byPosition = new Map(buttons.map((button) => [button.position, button]));
   const slots = Array.from({ length: columns * rows }, (_, position) => position);
 
@@ -43,6 +60,8 @@ export function StreamDeckFallback({
           {slots.map((position) => {
             const button = byPosition.get(position) ?? null;
             const Icon = button ? resolveButtonIcon(button.icon) : null;
+            const customId = button ? customIconId(button.icon) : null;
+            const customSource = customId ? (sources[customId] ?? null) : null;
             const execution = button ? executions[button.id] : undefined;
             const selected = button !== null && button.id === selectedButtonId;
             const palette = button
@@ -83,7 +102,11 @@ export function StreamDeckFallback({
               >
                 {button ? (
                   <>
-                    {Icon ? <Icon className="size-5" aria-hidden /> : null}
+                    {Icon ? (
+                      <Icon className="size-5" aria-hidden />
+                    ) : customSource ? (
+                      <img src={customSource} alt="" className="size-5 object-contain" />
+                    ) : null}
                     <span className="line-clamp-2 px-1 text-[10px] leading-tight font-medium break-words">
                       {button.label}
                     </span>

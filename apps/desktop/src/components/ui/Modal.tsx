@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
+import { cn } from '../../lib/cn';
 
 export interface ModalProps {
   open: boolean;
@@ -9,9 +10,11 @@ export interface ModalProps {
   onClose: () => void;
   children: ReactNode;
   footer?: ReactNode;
+  /** Wider sheets for pickers and the activity view. */
+  size?: 'md' | 'lg';
 }
 
-export function Modal({ open, title, description, onClose, children, footer }: ModalProps) {
+export function Modal({ open, title, description, onClose, children, footer, size = 'md' }: ModalProps) {
   useEffect(() => {
     if (!open) {
       return;
@@ -46,7 +49,10 @@ export function Modal({ open, title, description, onClose, children, footer }: M
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.99 }}
             transition={{ duration: 0.14, ease: 'easeOut' }}
-            className="w-full max-w-md rounded-panel border border-border-strong bg-surface shadow-xl"
+            className={cn(
+              'w-full rounded-panel border border-border-strong bg-surface shadow-xl',
+              size === 'lg' ? 'max-w-2xl' : 'max-w-md',
+            )}
           >
             <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-5 py-4">
               <div className="min-w-0">

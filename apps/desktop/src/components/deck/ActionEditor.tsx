@@ -5,21 +5,18 @@ import {
   type ActionType,
   type DeckButtonWithAction,
 } from '@condeck/shared';
-import { CheckCircle2, Loader2, Play, Save, TriangleAlert, Trash2 } from 'lucide-react';
+import { CheckCircle2, Loader2, Play, Save, Search, TriangleAlert, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useT, type MessageKey } from '../../i18n';
 import { cn } from '../../lib/cn';
+import { actionIcon } from '../../lib/action-icons';
+import { ActionPickerDialog } from './ActionPickerDialog';
 import type { ExecutionState } from '../../stores/deck-store';
 import { useObsStore } from '../../stores/obs-store';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Toggle } from '../ui/Toggle';
-
-const CATEGORY_LABELS: Record<string, string> = {
-  OBS: 'OBS Studio',
-  SYSTEM: 'System',
-  NAVIGATION: 'Navigation',
-};
 
 /** Stable empty array so the store selector never returns a new reference. */
 const NO_SCENES: string[] = [];
@@ -43,7 +40,9 @@ export function ActionEditor({
   onRemove,
   onRun,
 }: ActionEditorProps) {
+  const t = useT();
   const [actionType, setActionType] = useState<ActionType | ''>(button.action?.actionType ?? '');
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [config, setConfig] = useState<Record<string, unknown>>(button.action?.config ?? {});
   const [error, setError] = useState<string | null>(null);
   const obsSnapshot = useObsStore((state) => state.snapshot);
@@ -79,7 +78,7 @@ export function ActionEditor({
 
   function handleSave() {
     if (!actionType) {
-      setError('Choose an action type first.');
+      setError(t('action.chooseFirst'));
       return;
     }
     const issue = actionConfigIssue(actionType, config);
@@ -90,61 +89,70 @@ export function ActionEditor({
     onSave(button.id, actionType, config);
   }
 
-  const categories = [...new Set(catalog.map((item) => item.category))];
-
   return (
-    <section className="space-y-3 border-t border-border-subtle pt-3" aria-label="Button action">
+    <section className="space-y-3 border-t border-border-subtle pt-3" aria-label={t('action.section')}>
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-xs font-semibold tracking-wide text-content uppercase">Action</h3>
-        {saved ? (
-          <span className="text-[11px] text-content-subtle">Runs on press</span>
-        ) : (
-          <span className="text-[11px] text-content-subtle">Not configured</span>
-        )}
+        <h3 className="text-xs font-semibold tracking-wide text-content uppercase">{t('action.section')}</h3>
+        <span className="text-[11px] text-content-subtle">
+          {saved ? t('action.runsOnPress') : t('action.notConfigured')}
+        </span>
       </div>
 
-      <Select
-        label="Action type"
-        value={actionType}
-        error={error ?? undefined}
-        onChange={(event) => handleTypeChange(event.target.value)}
+      <button
+        type="button"
+        onClick={() => setPickerOpen(true)}
+        className="flex w-full items-center gap-3 rounded-control border border-border-subtle bg-surface-raised px-3 py-2 text-left transition-colors hover:border-border-strong hover:bg-surface-hover"
       >
-        <option value="">No action</option>
-        {categories.map((category) => (
-          <optgroup key={category} label={CATEGORY_LABELS[category] ?? category}>
-            {catalog
-              .filter((item) => item.category === category)
-              .map((item) => (
-                <option key={item.type} value={item.type}>
-                  {item.label}
-                </option>
-              ))}
-          </optgroup>
-        ))}
-      </Select>
+        <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-accent-soft text-accent">
+          {entry ? (() => { const Icon = actionIcon(entry.type); return <Icon className="size-4" aria-hidden />; })() : <Search className="size-4" aria-hidden />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium text-content">
+            {entry ? t(`action.types.${entry.type}.label`) : t('action.noAction')}
+          </span>
+          <span className="mt-0.5 block truncate text-[11px] text-content-subtle">
+            {entry ? t(`action.types.${entry.type}.description`) : t('action.chooseHint')}
+          </span>
+        </span>
+        <span className="shrink-0 text-[11px] font-medium text-accent">
+          {entry ? t('action.change') : t('action.choose')}
+        </span>
+      </button>
+
+      {error ? <p className="text-[11px] text-danger">{error}</p> : null}
+
+      <ActionPickerDialog
+        open={pickerOpen}
+        catalog={catalog}
+        selected={actionType}
+        onSelect={handleTypeChange}
+        onClose={() => setPickerOpen(false)}
+      />
 
       {catalog.length === 0 ? (
-        <p className="text-[11px] text-content-subtle">Loading the action catalog…</p>
+        <p className="text-[11px] text-content-subtle">{t('action.loadingCatalog')}</p>
       ) : null}
 
       {entry ? (
         <>
-          <p className="text-[11px] leading-relaxed text-content-subtle">{entry.description}</p>
+          <p className="text-[11px] leading-relaxed text-content-subtle">
+            {t(`action.types.${entry.type}.description`)}
+          </p>
 
           {entry.fields.map((field) =>
             entry.type === 'OBS_SWITCH_SCENE' && field.key === 'sceneName' ? (
               <Select
                 key={field.key}
-                label={field.label}
+                label={t(`action.fields.${field.key}` as MessageKey)}
                 hint={
                   obsScenes.length > 0
-                    ? field.help
-                    : 'Connect to OBS in Integrations to pick a scene from a list.'
+                    ? t(`action.fields.${field.key}` as MessageKey)
+                    : t('action.sceneHintConnect')
                 }
                 value={typeof config[field.key] === 'string' ? (config[field.key] as string) : ''}
                 onChange={(event) => handleFieldChange(field.key, event.target.value)}
               >
-                <option value="">Choose a scene…</option>
+                <option value="">{t('action.scenePlaceholder')}</option>
                 {obsScenes.map((scene) => (
                   <option key={scene} value={scene}>
                     {scene}
@@ -159,7 +167,7 @@ export function ActionEditor({
             ) : field.type === 'boolean' ? (
               <Toggle
                 key={field.key}
-                label={field.label}
+                label={t(`action.fields.${field.key}` as MessageKey)}
                 description={field.help}
                 checked={config[field.key] === true}
                 onChange={(checked) => handleFieldChange(field.key, checked)}
@@ -167,7 +175,7 @@ export function ActionEditor({
             ) : (
               <Input
                 key={field.key}
-                label={field.label}
+                label={t(`action.fields.${field.key}` as MessageKey)}
                 placeholder={field.placeholder}
                 hint={field.help}
                 value={typeof config[field.key] === 'string' ? (config[field.key] as string) : ''}
@@ -179,15 +187,14 @@ export function ActionEditor({
           {entry.requiresObs ? (
             <p className="rounded-control border border-border-subtle bg-surface-raised px-2.5 py-2 text-[11px] leading-relaxed text-content-subtle">
               {obsState === 'CONNECTED'
-                ? 'OBS is connected. This action runs through the connection configured in Integrations.'
-                : 'OBS is not connected. The action still saves, but pressing the button reports the connection error until you connect in Integrations.'}
+                ? t('action.requiresObsConnected')
+                : t('action.requiresObsDisconnected')}
             </p>
           ) : null}
         </>
       ) : (
         <p className="rounded-control border border-border-subtle bg-surface-raised px-2.5 py-2 text-[11px] leading-relaxed text-content-subtle">
-          Choose an action to make this button do something. Without an action it is only a label on
-          the deck.
+          {t('action.chooseHint')}
         </p>
       )}
 
@@ -224,7 +231,7 @@ export function ActionEditor({
           loading={busy}
           onClick={handleSave}
         >
-          Save action
+          {t('action.save')}
         </Button>
         <div className="flex gap-2">
           <Button
@@ -234,7 +241,7 @@ export function ActionEditor({
             disabled={!saved || !button.isEnabled || running}
             onClick={() => onRun(button.id)}
           >
-            Run test
+            {t('action.runTest')}
           </Button>
           <Button
             className="flex-1"
@@ -244,13 +251,11 @@ export function ActionEditor({
             disabled={!saved || busy}
             onClick={() => onRemove(button.id)}
           >
-            Remove
+            {t('action.remove')}
           </Button>
         </div>
         {!button.isEnabled ? (
-          <p className="text-[11px] text-content-subtle">
-            This button is disabled, so its action will not run.
-          </p>
+          <p className="text-[11px] text-content-subtle">{t('action.disabledHint')}</p>
         ) : null}
       </div>
     </section>
