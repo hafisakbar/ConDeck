@@ -50,8 +50,6 @@ export function ActivityLogDialog({ open, initialLogs, onClose }: ActivityLogDia
     return () => {
       cancelled = true;
     };
-    // Only refetch when the dialog opens.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const pageCount = Math.max(1, Math.ceil(logs.length / PAGE_SIZE));

@@ -7,7 +7,6 @@ import { cn } from '../../lib/cn';
 import { filterIcons, iconCategories, iconLibrary, type IconCategory } from '../../lib/icon-library';
 import { useIconStore } from '../../stores/icon-store';
 import { Button } from '../ui/Button';
-import { Input } from '../ui/Input';
 
 export interface IconPickerProps {
   value: ButtonIcon | null;

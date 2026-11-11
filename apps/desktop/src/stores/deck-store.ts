@@ -137,7 +137,7 @@ export const useDeckStore = create<DeckState>((set, get) => ({
       let decks = await unwrap(getBridge().listDecks({ profileId }));
       const current = get().detail;
       const stillExists = current && decks.some((deck) => deck.id === current.deck.id);
-      let nextDeckId = stillExists ? current.deck.id : decks[0]?.id;
+      const nextDeckId = stillExists ? current.deck.id : decks[0]?.id;
 
       /*
        * ConDeck uses one deck with one page. A profile that has never had one -

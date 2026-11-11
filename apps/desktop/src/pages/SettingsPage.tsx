@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Grid2x2 } from 'lucide-react';
-import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel';
+import { Panel, PanelBody } from '../components/ui/Panel';
 import { useT } from '../i18n';
 import { useAppStore } from '../stores/app-store';
 

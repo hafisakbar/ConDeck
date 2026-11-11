@@ -1,6 +1,7 @@
 import { gridLimits, type DeckDetail } from '@condeck/shared';
 import { Minus, Plus, TriangleAlert } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useT } from '../../i18n';
 import {
   BUTTON_GAP_LIMITS,
   BUTTON_SIZE_LIMITS,
@@ -47,7 +48,7 @@ function Stepper({
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          aria-label={`Decrease ${label.toLowerCase()}`}
+          aria-label={`- ${label}`}
           className="grid size-7 place-items-center rounded text-content-muted transition-colors hover:bg-surface-hover hover:text-content disabled:opacity-35"
         >
           <Minus className="size-3.5" aria-hidden />
@@ -57,7 +58,7 @@ function Stepper({
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
-          aria-label={`Increase ${label.toLowerCase()}`}
+          aria-label={`+ ${label}`}
           className="grid size-7 place-items-center rounded text-content-muted transition-colors hover:bg-surface-hover hover:text-content disabled:opacity-35"
         >
           <Plus className="size-3.5" aria-hidden />
@@ -80,6 +81,7 @@ export function DeckLayoutDialog({
   onClose,
   onApply,
 }: DeckLayoutDialogProps) {
+  const t = useT();
   const [columns, setColumns] = useState(detail?.deck.columns ?? 3);
   const [rows, setRows] = useState(detail?.deck.rows ?? 3);
   const [buttonScale, setButtonScale] = useState(initial.buttonScale);
@@ -104,6 +106,7 @@ export function DeckLayoutDialog({
     rows !== (detail?.deck.rows ?? rows) ||
     buttonScale !== initial.buttonScale ||
     gapScale !== initial.gapScale;
+  const used = detail?.pages[0]?.buttons.length ?? 0;
 
   function submit(): void {
     if (removed.length > 0 && !confirming) {
@@ -116,13 +119,13 @@ export function DeckLayoutDialog({
   return (
     <Modal
       open={open}
-      title="Deck layout"
-      description="Change the grid shape and how the keys sit on the device. Shrinking removes slots, not silently."
+      title={t('layout.title')}
+      description={t('layout.description')}
       onClose={onClose}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t('layout.cancel')}
           </Button>
           <Button
             variant={removed.length > 0 ? 'danger' : 'primary'}
@@ -132,9 +135,9 @@ export function DeckLayoutDialog({
           >
             {removed.length > 0
               ? confirming
-                ? `Remove ${removed.length} and apply`
-                : 'Review removal'
-              : 'Apply layout'}
+                ? t('layout.removeAndApply', { count: removed.length })
+                : t('layout.reviewRemoval')
+              : t('layout.apply')}
           </Button>
         </>
       }
@@ -142,14 +145,14 @@ export function DeckLayoutDialog({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Stepper
-            label="Columns"
+            label={t('layout.columns')}
             value={columns}
             min={gridLimits.minColumns}
             max={gridLimits.maxColumns}
             onChange={setColumns}
           />
           <Stepper
-            label="Rows"
+            label={t('layout.rows')}
             value={rows}
             min={gridLimits.minRows}
             max={gridLimits.maxRows}
@@ -159,7 +162,7 @@ export function DeckLayoutDialog({
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-content-muted">Key size</p>
+            <p className="text-xs font-medium text-content-muted">{t('layout.keySize')}</p>
             <span className="text-[11px] tabular-nums text-content-subtle">
               {Math.round(buttonScale * 100)}%
             </span>
@@ -171,14 +174,14 @@ export function DeckLayoutDialog({
             step={0.02}
             value={buttonScale}
             onChange={(event) => setButtonScale(Number(event.target.value))}
-            aria-label="Key size"
+            aria-label={t('layout.keySize')}
             className="w-full accent-accent"
           />
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-content-muted">Key spacing</p>
+            <p className="text-xs font-medium text-content-muted">{t('layout.keySpacing')}</p>
             <span className="text-[11px] tabular-nums text-content-subtle">
               {Math.round(gapScale * 100)}%
             </span>
@@ -190,15 +193,14 @@ export function DeckLayoutDialog({
             step={0.01}
             value={gapScale}
             onChange={(event) => setGapScale(Number(event.target.value))}
-            aria-label="Key spacing"
+            aria-label={t('layout.keySpacing')}
             className="w-full accent-accent"
           />
         </div>
 
         <p className="text-[11px] text-content-subtle">
-          {columns} × {rows} = {columns * rows} slots per page · current page uses{' '}
-          {detail?.pages.find((page) => page.id === detail.pages[0]?.id)?.buttons.length ?? 0} on its
-          busiest page
+          {t('layout.summary', { columns, rows, slots: columns * rows })} ·{' '}
+          {t('deck.slotsUsed', { used, total: columns * rows })}
         </p>
 
         {removed.length > 0 ? (
@@ -208,20 +210,24 @@ export function DeckLayoutDialog({
           >
             <p className="flex items-center gap-1.5 text-xs font-semibold text-danger">
               <TriangleAlert className="size-3.5" aria-hidden />
-              {removed.length} button{removed.length === 1 ? '' : 's'} would be deleted
+              {removed.length === 1
+                ? t('layout.wouldDelete', { count: removed.length })
+                : t('layout.wouldDeletePlural', { count: removed.length })}
             </p>
             <ul className="space-y-0.5 text-[11px] text-danger/90">
               {removed.slice(0, 5).map((entry) => (
                 <li key={entry.buttonId}>
-                  “{entry.label}” — slot {entry.position + 1} on {entry.pageName}
+                  {t('layout.removedLine', {
+                    label: entry.label,
+                    slot: entry.position + 1,
+                    page: entry.pageName,
+                  })}
                 </li>
               ))}
-              {removed.length > 5 ? <li>…and {removed.length - 5} more.</li> : null}
+              {removed.length > 5 ? <li>{t('layout.more', { count: removed.length - 5 })}</li> : null}
             </ul>
             <p className="text-[11px] text-danger/80">
-              {confirming
-                ? 'Press the red button again to delete them and apply the new grid.'
-                : 'Slots outside the new grid cannot be kept. Review, then confirm.'}
+              {confirming ? t('layout.confirmHint') : t('layout.reviewHint')}
             </p>
           </div>
         ) : null}
