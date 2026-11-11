@@ -12,6 +12,7 @@ export const en = {
     decks: 'My Deck',
     profiles: 'Profiles',
     integrations: 'Integrations',
+    sounds: 'Sound Library',
     devices: 'Remote Devices',
     settings: 'Settings',
   },
@@ -71,6 +72,26 @@ export const en = {
     manageProfiles: 'Manage profiles',
     obsIntegration: 'OBS integration',
     pairDevice: 'Pair a remote device',
+  },
+  sounds: {
+    title: 'Sound Library',
+    description: 'Audio files a Soundboard button can play.',
+    add: 'Add sounds',
+    chooseFiles: 'Choose files',
+    emptyTitle: 'No sounds yet',
+    emptyDescription:
+      'Add MP3, WAV, OGG, M4A or FLAC files. They are copied into ConDeck and stay available after a restart.',
+    preview: 'Play',
+    stop: 'Stop',
+    stopAll: 'Stop all',
+    delete: 'Delete sound',
+    deleteTitle: 'Delete this sound?',
+    deleteDescription: '"{name}" will be removed from the library.',
+    deleteHint: 'This cannot be undone. Sounds used by a button must be removed from that button first.',
+    outputNote:
+      'Sounds play through the default Windows output device. Keep Desktop Audio enabled in OBS so the stream hears them.',
+    noSoundsForAction: 'The library is empty, so this action cannot play anything yet.',
+    openLibrary: 'Open the Sound Library',
   },
   activity: {
     title: 'Activity',
@@ -175,6 +196,10 @@ export const en = {
     remove: 'Remove',
     disabledHint: 'This button is disabled, so its action will not run.',
     chooseFirst: 'Choose an action type first.',
+    chooseSound: 'Choose a sound…',
+    soundHint: 'Add audio files in the Sound Library first.',
+    modeRestart: 'Restart from the beginning',
+    modeIgnore: 'Ignore while it is still playing',
     loadingCatalog: 'Loading the action catalog…',
     scenePlaceholder: 'Choose a scene…',
     sceneHintConnect: 'Connect to OBS in Integrations to pick a scene from a list.',
@@ -187,10 +212,13 @@ export const en = {
       applicationPath: 'Application path',
       applicationPathHelp: 'Absolute path. The file is opened directly, never through a shell.',
       url: 'URL',
+      soundId: 'Sound',
+      mode: 'When triggered again',
     },
     categories: {
       OBS: 'OBS Studio',
       SYSTEM: 'System',
+      SOUNDBOARD: 'Soundboard',
       NAVIGATION: 'Navigation',
     },
     types: {
@@ -214,6 +242,10 @@ export const en = {
       SYSTEM_OPEN_URL: {
         label: 'Open URL',
         description: 'Open an http or https address in the default browser.',
+      },
+      SOUNDBOARD_PLAY: {
+        label: 'Play sound',
+        description: 'Play an audio file from the sound library through the default output device.',
       },
       NAV_NEXT_PAGE: { label: 'Next page', description: 'Move the desktop deck to the next page.' },
       NAV_PREV_PAGE: {
@@ -279,6 +311,7 @@ export const id: Messages = {
     decks: 'Deck Saya',
     profiles: 'Profil',
     integrations: 'Integrasi',
+    sounds: 'Pustaka Suara',
     devices: 'Perangkat Remote',
     settings: 'Pengaturan',
   },
@@ -338,6 +371,26 @@ export const id: Messages = {
     manageProfiles: 'Kelola profil',
     obsIntegration: 'Integrasi OBS',
     pairDevice: 'Pasangkan perangkat remote',
+  },
+  sounds: {
+    title: 'Pustaka Suara',
+    description: 'Berkas audio yang dapat diputar oleh tombol Soundboard.',
+    add: 'Tambah suara',
+    chooseFiles: 'Pilih berkas',
+    emptyTitle: 'Belum ada suara',
+    emptyDescription:
+      'Tambahkan berkas MP3, WAV, OGG, M4A, atau FLAC. Berkas disalin ke ConDeck dan tetap tersedia setelah aplikasi dibuka kembali.',
+    preview: 'Putar',
+    stop: 'Hentikan',
+    stopAll: 'Hentikan semua',
+    delete: 'Hapus suara',
+    deleteTitle: 'Hapus suara ini?',
+    deleteDescription: '"{name}" akan dihapus dari pustaka.',
+    deleteHint: 'Tindakan ini tidak dapat dibatalkan. Suara yang dipakai tombol harus dilepas dari tombol itu dulu.',
+    outputNote:
+      'Suara diputar melalui perangkat output audio default Windows. Pastikan Desktop Audio aktif di OBS agar suara ikut masuk ke stream.',
+    noSoundsForAction: 'Pustaka masih kosong, jadi aksi ini belum bisa memutar apa pun.',
+    openLibrary: 'Buka Pustaka Suara',
   },
   activity: {
     title: 'Aktivitas',
@@ -442,6 +495,10 @@ export const id: Messages = {
     remove: 'Lepas',
     disabledHint: 'Tombol ini nonaktif, jadi aksinya tidak akan berjalan.',
     chooseFirst: 'Pilih jenis aksi terlebih dahulu.',
+    chooseSound: 'Pilih suara…',
+    soundHint: 'Tambahkan berkas audio di Pustaka Suara terlebih dahulu.',
+    modeRestart: 'Putar ulang dari awal',
+    modeIgnore: 'Abaikan selama masih diputar',
     loadingCatalog: 'Memuat katalog aksi…',
     scenePlaceholder: 'Pilih scene…',
     sceneHintConnect: 'Hubungkan OBS di Integrasi untuk memilih scene dari daftar.',
@@ -454,10 +511,13 @@ export const id: Messages = {
       applicationPath: 'Lokasi aplikasi',
       applicationPathHelp: 'Path absolut. Berkas dibuka langsung, tidak melalui shell.',
       url: 'URL',
+      soundId: 'Suara',
+      mode: 'Saat dipicu ulang',
     },
     categories: {
       OBS: 'OBS Studio',
       SYSTEM: 'Sistem',
+      SOUNDBOARD: 'Soundboard',
       NAVIGATION: 'Navigasi',
     },
     types: {
@@ -481,6 +541,10 @@ export const id: Messages = {
       SYSTEM_OPEN_URL: {
         label: 'Buka URL',
         description: 'Buka alamat http atau https di browser bawaan.',
+      },
+      SOUNDBOARD_PLAY: {
+        label: 'Putar suara',
+        description: 'Putar berkas audio dari pustaka suara melalui perangkat output bawaan.',
       },
       NAV_NEXT_PAGE: { label: 'Halaman berikutnya', description: 'Pindah deck ke halaman berikutnya.' },
       NAV_PREV_PAGE: {

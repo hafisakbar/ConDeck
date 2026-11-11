@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { isoTimestampSchema } from './domain';
 import { AppError, type ErrorCode } from './errors';
+import { soundPlayModeSchema } from './sounds';
 
 /**
  * Phase 3 domain — Action Engine.
@@ -23,6 +24,7 @@ export const actionTypes = [
   'OBS_SET_MUTE',
   'SYSTEM_OPEN_APP',
   'SYSTEM_OPEN_URL',
+  'SOUNDBOARD_PLAY',
   'NAV_NEXT_PAGE',
   'NAV_PREV_PAGE',
 ] as const;
@@ -30,7 +32,7 @@ export const actionTypes = [
 export const actionTypeSchema = z.enum(actionTypes);
 export type ActionType = z.infer<typeof actionTypeSchema>;
 
-export const actionCategories = ['OBS', 'SYSTEM', 'NAVIGATION'] as const;
+export const actionCategories = ['OBS', 'SYSTEM', 'SOUNDBOARD', 'NAVIGATION'] as const;
 export const actionCategorySchema = z.enum(actionCategories);
 export type ActionCategory = z.infer<typeof actionCategorySchema>;
 
@@ -90,6 +92,10 @@ export const actionConfigSchemas = {
   OBS_SET_MUTE: z.strictObject({ inputName: audioInputSchema, muted: z.boolean() }),
   SYSTEM_OPEN_APP: z.strictObject({ applicationPath: applicationPathSchema }),
   SYSTEM_OPEN_URL: z.strictObject({ url: urlSchema }),
+  SOUNDBOARD_PLAY: z.strictObject({
+    soundId: z.uuid('Choose a sound from the sound library.'),
+    mode: soundPlayModeSchema,
+  }),
   NAV_NEXT_PAGE: noConfigSchema,
   NAV_PREV_PAGE: noConfigSchema,
 } satisfies Record<ActionType, z.ZodType>;
@@ -232,6 +238,14 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     ],
   },
   {
+    type: 'SOUNDBOARD_PLAY',
+    category: 'SOUNDBOARD',
+    label: 'Play sound',
+    description: 'Play an audio file from the sound library through the default output device.',
+    requiresObs: false,
+    fields: [],
+  },
+  {
     type: 'NAV_NEXT_PAGE',
     category: 'NAVIGATION',
     label: 'Next page',
@@ -290,6 +304,9 @@ export function parseActionConfig(
 
 /** Starting values for the editor, derived from the declared fields. */
 export function defaultActionConfig(type: ActionType): Record<string, unknown> {
+  if (type === 'SOUNDBOARD_PLAY') {
+    return { soundId: '', mode: 'restart' };
+  }
   const config: Record<string, unknown> = {};
   for (const field of getActionCatalogEntry(type).fields) {
     config[field.key] = field.type === 'boolean' ? false : '';

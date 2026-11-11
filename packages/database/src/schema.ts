@@ -199,6 +199,25 @@ export const customIcons = sqliteTable(
 );
 
 /**
+ * sounds — Soundboard library metadata. The audio bytes live on disk under the
+ * application user-data folder; this row keeps the reference and display data.
+ */
+export const sounds = sqliteTable(
+  'sounds',
+  {
+    id: text('id').primaryKey(),
+    name: text('name').notNull(),
+    fileName: text('file_name').notNull(),
+    filePath: text('file_path').notNull(),
+    format: text('format').notNull(),
+    mimeType: text('mime_type').notNull(),
+    fileSize: integer('file_size').notNull(),
+    createdAt,
+  },
+  (table) => [index('sounds_name_idx').on(table.name)],
+);
+
+/**
  * activity_logs — DATABASE_DESIGN.md §4.10
  */
 export const activityLogs = sqliteTable(
@@ -227,4 +246,5 @@ export type DeviceRow = typeof devices.$inferSelect;
 export type DeviceSessionRow = typeof deviceSessions.$inferSelect;
 export type MediaAssetRow = typeof mediaAssets.$inferSelect;
 export type CustomIconRow = typeof customIcons.$inferSelect;
+export type SoundRow = typeof sounds.$inferSelect;
 export type ActivityLogRow = typeof activityLogs.$inferSelect;

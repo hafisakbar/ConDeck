@@ -57,3 +57,13 @@ export {
   getCustomIcon,
   listCustomIcons,
 } from './repositories/custom-icons';
+export {
+  createSound,
+  deleteSound,
+  getSound,
+  getSoundFilePath,
+  listSounds,
+  soundUsage,
+  type CreateSoundInput,
+  type SoundUsage,
+} from './repositories/sounds';

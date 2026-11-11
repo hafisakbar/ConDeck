@@ -1,4 +1,5 @@
 export * from './actions';
+export * from './sounds';
 export * from './custom-icons';
 export * from './deck';
 export * from './domain';

@@ -10,6 +10,7 @@ import { createActionService } from './services/action.service';
 import { closeDatabase, getDatabasePath, initDatabase } from './services/database.service';
 import { createSafeStorageSecretStore } from './services/obs-secrets';
 import { createObsService, type ObsService } from './services/obs.service';
+import { createSoundService } from './services/sound.service';
 import { createRemoteService, type RemoteService } from './services/remote.service';
 import { createMainWindow } from './window';
 
@@ -86,7 +87,18 @@ function bootstrap(): void {
     obs: activeObsService.getActionPort(),
   });
 
-  const actions = createActionService({ db: database.db, ports: actionPorts });
+  const soundService = createSoundService({
+    db: database.db,
+    soundsDir: join(app.getPath('userData'), 'sounds'),
+    broadcast,
+    logger: activeLogger,
+  });
+
+  const actions = createActionService({
+    db: database.db,
+    ports: actionPorts,
+    playSound: (soundId, mode) => soundService.play(soundId, mode),
+  });
 
   const activeRemoteService = createRemoteService({
     db: database.db,
@@ -103,6 +115,7 @@ function bootstrap(): void {
     db: database.db,
     getAppInfo: buildAppInfo,
     actions,
+    sounds: soundService,
     obs: activeObsService,
     remote: activeRemoteService,
   });
