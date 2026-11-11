@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { Badge } from '../components/ui/Badge';
-import { Panel, PanelBody, PanelHeader } from '../components/ui/Panel';
+import { Grid2x2 } from 'lucide-react';
+import { Panel, PanelBody } from '../components/ui/Panel';
+import { useT } from '../i18n';
 import { useAppStore } from '../stores/app-store';
 
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
@@ -12,38 +13,38 @@ function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** Settings is now purely informational; theme and language live in the top bar. */
 export function SettingsPage() {
+  const t = useT();
   const appInfo = useAppStore((state) => state.appInfo);
+  const year = new Date().getFullYear();
 
   return (
-    <div className="space-y-5">
+    <div className="mx-auto max-w-3xl space-y-5">
       <Panel>
-        <PanelHeader title="About" description="Build information and local storage locations." />
+        <div className="flex items-start gap-4 border-b border-border-subtle px-5 py-5">
+          <span className="grid size-12 shrink-0 place-items-center rounded-panel bg-accent-soft text-accent">
+            <Grid2x2 className="size-6" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-lg font-semibold text-content">ConDeck</h1>
+            <p className="mt-1 text-xs leading-relaxed text-content-muted">{t('settings.descriptionText')}</p>
+            <p className="mt-2 text-[11px] text-content-subtle">{t('settings.copyright', { year })}</p>
+          </div>
+        </div>
         <PanelBody>
           <dl>
-            <InfoRow label="Application">{appInfo ? `${appInfo.name} ${appInfo.version}` : 'Unknown'}</InfoRow>
-            <InfoRow label="Platform">{appInfo?.platform ?? 'Unknown'}</InfoRow>
-            <InfoRow label="Build">
-              {appInfo ? (appInfo.isPackaged ? 'Packaged build' : 'Development build') : 'Unknown'}
+            <InfoRow label={t('settings.application')}>{appInfo?.name ?? 'ConDeck'}</InfoRow>
+            <InfoRow label={t('settings.version')}>{appInfo?.version ?? '—'}</InfoRow>
+            <InfoRow label={t('settings.platform')}>{appInfo?.platform ?? '—'}</InfoRow>
+            <InfoRow label={t('settings.build')}>
+              {appInfo
+                ? t(appInfo.isPackaged ? 'settings.packaged' : 'settings.development')
+                : '—'}
             </InfoRow>
-            <InfoRow label="Database">{appInfo?.databasePath ?? 'Unknown'}</InfoRow>
-            <InfoRow label="Log file">{appInfo?.logPath ?? 'Unknown'}</InfoRow>
+            <InfoRow label={t('settings.database')}>{appInfo?.databasePath ?? '—'}</InfoRow>
+            <InfoRow label={t('settings.logFile')}>{appInfo?.logPath ?? '—'}</InfoRow>
           </dl>
-        </PanelBody>
-      </Panel>
-
-      <Panel>
-        <PanelHeader
-          title="General, appearance and network"
-          description="These preference sections are part of later phases."
-          action={<Badge tone="neutral">Planned</Badge>}
-        />
-        <PanelBody>
-          <p className="text-xs leading-relaxed text-content-muted">
-            Remote server port, theme preferences, backup and restore, and storage management are
-            not implemented yet. They follow the development roadmap after the deck builder, action
-            engine and mobile remote are complete.
-          </p>
         </PanelBody>
       </Panel>
     </div>

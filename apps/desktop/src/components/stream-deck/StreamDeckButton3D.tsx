@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { buttonGlowLift, resolveButtonVisualState } from '../../lib/button-visual';
 import type { ExecutionState } from '../../stores/deck-store';
+import { useIconSource } from '../../stores/icon-store';
 import { slotPosition, type ButtonLayout } from './grid-layout';
 import { useButtonFaceTexture } from './useButtonFaceTexture';
 
@@ -101,9 +102,11 @@ export function StreamDeckButton3D({
   const state = palette[visual];
 
   // White face + material tint: no canvas rebuilds when the pointer moves.
+  const iconImageUrl = useIconSource(button?.icon ?? null);
   const texture = useButtonFaceTexture({
     label: button?.label ?? null,
     icon: button?.icon ?? null,
+    iconImageUrl,
     empty,
   });
 

@@ -43,6 +43,11 @@ import {
   type SaveObsSettingsInput,
 } from './obs';
 import {
+  createCustomIconInputSchema,
+  deleteCustomIconInputSchema,
+  type CustomIcon,
+} from './custom-icons';
+import {
   revokeDeviceInputSchema,
   saveRemoteSettingsInputSchema,
   type RemotePairing,
@@ -97,6 +102,9 @@ export const ipcChannels = [
   'remote:stop',
   'remote:create-pairing',
   'activity:list',
+  'icons:list',
+  'icons:create',
+  'icons:delete',
 ] as const;
 
 export type IpcChannel = (typeof ipcChannels)[number];
@@ -139,6 +147,9 @@ export const ipcInputSchemas = {
   'remote:stop': z.void(),
   'remote:create-pairing': z.void(),
   'activity:list': listActivityInputSchema,
+  'icons:list': z.void(),
+  'icons:create': createCustomIconInputSchema,
+  'icons:delete': deleteCustomIconInputSchema,
 } as const satisfies Record<IpcChannel, z.ZodType>;
 
 export type IpcErrorCode =
@@ -273,4 +284,8 @@ export interface ConDeckBridge {
   /** Subscribes to host server status pushes; returns the unsubscribe function. */
   onRemoteStatus(listener: (status: RemoteServerStatus) => void): () => void;
   listActivity(input?: { limit?: number }): Promise<IpcResult<ActivityLog[]>>;
+
+  listCustomIcons(): Promise<IpcResult<CustomIcon[]>>;
+  createCustomIcon(input: { name: string; dataUrl: string }): Promise<IpcResult<CustomIcon>>;
+  deleteCustomIcon(input: { iconId: string }): Promise<IpcResult<DeletedRef>>;
 }

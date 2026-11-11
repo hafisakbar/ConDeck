@@ -1,10 +1,12 @@
 import {
   countProfiles,
   createButton,
+  createCustomIcon as createCustomIconRecord,
   createDeck,
   createPage,
   createProfile,
   deleteButton,
+  deleteCustomIcon as deleteCustomIconRecord,
   deleteDeck,
   deletePage,
   deleteProfile,
@@ -12,6 +14,7 @@ import {
   getActionTarget,
   getDeck,
   getDeckDetail,
+  listCustomIcons,
   listDecks,
   listDevices,
   listProfiles,
@@ -27,6 +30,7 @@ import {
 import {
   AppError,
   actionTypeLabel,
+  decodeCustomIcon,
   ipcFailure,
   ipcInputSchemas,
   ipcSuccess,
@@ -36,6 +40,8 @@ import {
   type ActionRecord,
   type AppInfo,
   type CreateButtonInput,
+  type CreateCustomIconInput,
+  type CustomIcon,
   type CreateDeckInput,
   type CreatePageInput,
   type CreateProfileInput,
@@ -47,6 +53,7 @@ import {
   type DeckSummary,
   type DeleteActionInput,
   type DeleteButtonInput,
+  type DeleteCustomIconInput,
   type DeleteDeckInput,
   type DeletePageInput,
   type DeleteProfileInput,
@@ -489,6 +496,40 @@ export function registerIpcHandlers({
   handle<ListActivityInput, ActivityLog[]>('activity:list', (input) =>
     listRecentActivity(db, input.limit),
   );
+
+  // ----------------------------------------------------------- custom icons
+
+  handle<void, CustomIcon[]>('icons:list', () => listCustomIcons(db));
+
+  handle<CreateCustomIconInput, CustomIcon>('icons:create', (input) => {
+    const decoded = decodeCustomIcon(input.dataUrl);
+    if (!decoded) {
+      throw new AppError('INVALID_INPUT', 'Use a PNG, JPEG or WebP image up to 300 KB.');
+    }
+    const icon = createCustomIconRecord(db, {
+      name: input.name,
+      mimeType: decoded.mimeType,
+      base64: decoded.base64,
+      byteSize: decoded.byteSize,
+    });
+    recordActivity(db, {
+      eventType: 'ICON_CREATED',
+      description: `Custom icon "${icon.name}" added`,
+      metadata: { iconId: icon.id, mimeType: icon.mimeType, byteSize: icon.byteSize },
+    });
+    logger.info('Custom icon saved', { iconId: icon.id, byteSize: icon.byteSize });
+    return icon;
+  });
+
+  handle<DeleteCustomIconInput, DeletedRef>('icons:delete', (input) => {
+    deleteCustomIconRecord(db, input.iconId);
+    recordActivity(db, {
+      eventType: 'ICON_DELETED',
+      description: 'Custom icon deleted',
+      metadata: { iconId: input.iconId },
+    });
+    return { id: input.iconId };
+  });
 
   logger.info('IPC handlers registered', { channels: Object.keys(ipcInputSchemas) });
 }

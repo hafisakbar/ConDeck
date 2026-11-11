@@ -1,4 +1,5 @@
 export * from './actions';
+export * from './custom-icons';
 export * from './deck';
 export * from './domain';
 export * from './errors';

@@ -1,6 +1,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { Grid2x2, X } from 'lucide-react';
 import { useEffect } from 'react';
+import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { navigationItems, type ViewId } from '../../lib/navigation';
 import { useAppStore } from '../../stores/app-store';
@@ -17,6 +18,7 @@ export interface NavigationDrawerProps {
  * closes on selection, outside click or Escape, and reuses the existing routes.
  */
 export function NavigationDrawer({ open, view, onSelect, onClose }: NavigationDrawerProps) {
+  const t = useT();
   const version = useAppStore((state) => state.appInfo?.version);
   const reduceMotion = useReducedMotion();
 
@@ -46,15 +48,15 @@ export function NavigationDrawer({ open, view, onSelect, onClose }: NavigationDr
         >
           <button
             type="button"
-            aria-label="Close menu"
+            aria-label={t('common.close')}
             onClick={onClose}
-            className="absolute inset-0 bg-black/55 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/55 backdrop-blur-[2px] dark:bg-black/55"
           />
 
           <motion.aside
             role="dialog"
             aria-modal="true"
-            aria-label="Main menu"
+            aria-label={t('topbar.menu')}
             initial={{ x: -28, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -20, opacity: 0 }}
@@ -74,7 +76,7 @@ export function NavigationDrawer({ open, view, onSelect, onClose }: NavigationDr
               <button
                 type="button"
                 onClick={onClose}
-                aria-label="Close menu"
+                aria-label={t('common.close')}
                 className="grid size-7 place-items-center rounded-lg text-content-muted transition-colors hover:bg-surface-hover hover:text-content"
               >
                 <X className="size-4" aria-hidden />
@@ -103,7 +105,7 @@ export function NavigationDrawer({ open, view, onSelect, onClose }: NavigationDr
                         )}
                       >
                         <Icon className="size-4 shrink-0" aria-hidden />
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">{t(item.labelKey)}</span>
                       </button>
                     </li>
                   );
@@ -112,7 +114,9 @@ export function NavigationDrawer({ open, view, onSelect, onClose }: NavigationDr
             </nav>
 
             <div className="border-t border-border-subtle px-5 py-3">
-              <p className="text-[11px] text-content-subtle">Version {version ?? '—'}</p>
+              <p className="text-[11px] text-content-subtle">
+                {t('settings.version')} {version ?? '—'}
+              </p>
             </div>
           </motion.aside>
         </motion.div>

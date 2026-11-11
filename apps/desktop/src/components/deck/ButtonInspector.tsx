@@ -3,11 +3,12 @@ import {
   type ActionCatalogEntry,
   type ActionType,
   type ButtonAppearance,
-  type ButtonIconName,
+  type ButtonIcon,
   type DeckButtonWithAction,
 } from '@condeck/shared';
 import { Copy, Trash2, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useT } from '../../i18n';
 import type { ExecutionState } from '../../stores/deck-store';
 import { AppearanceEditor } from '../stream-deck/AppearanceEditor';
 import { ActionEditor } from './ActionEditor';
@@ -22,7 +23,7 @@ const HEX_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 
 export interface ButtonPatch {
   label?: string;
-  icon?: ButtonIconName | null;
+  icon?: ButtonIcon | null;
   backgroundColor?: string;
   textColor?: string;
   appearance?: ButtonAppearance;
@@ -65,8 +66,9 @@ export function ButtonInspector({
   onRemoveAction,
   onRunAction,
 }: ButtonInspectorProps) {
+  const t = useT();
   const [label, setLabel] = useState(button.label);
-  const [icon, setIcon] = useState<ButtonIconName | null>(button.icon);
+  const [icon, setIcon] = useState<ButtonIcon | null>(button.icon);
   const [backgroundColor, setBackgroundColor] = useState(button.backgroundColor);
   const [textColor, setTextColor] = useState(button.textColor);
   const [appearance, setAppearance] = useState<ButtonAppearance>(
@@ -117,11 +119,11 @@ export function ButtonInspector({
 
   function handleSave() {
     if (label.trim().length === 0) {
-      setError('Button label is required.');
+      setError(t('inspector.labelRequired'));
       return;
     }
     if (!HEX_PATTERN.test(backgroundColor) || !HEX_PATTERN.test(textColor)) {
-      setError('Colours must be valid hex values.');
+      setError(t('inspector.coloursInvalid'));
       return;
     }
     onSave({
@@ -139,25 +141,25 @@ export function ButtonInspector({
     <div className="flex h-full flex-col">
       <div className="flex items-start justify-between gap-3 border-b border-border-subtle px-4 py-3">
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-content">Button properties</h2>
+          <h2 className="text-sm font-semibold text-content">{t('inspector.title')}</h2>
           <p className="mt-0.5 text-[11px] text-content-subtle">
-            Slot {button.position + 1}
-            {position !== button.position ? ` → slot ${position + 1}` : ''}
+            {t('inspector.slot', { slot: button.position + 1 })}
+            {position !== button.position ? t('inspector.movingTo', { slot: position + 1 }) : ''}
           </p>
         </div>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close properties"
+          aria-label={t('inspector.close')}
           className="text-content-muted transition-colors hover:text-content"
         >
           <X className="size-4" aria-hidden />
         </button>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto px-4 pb-8 pt-4">
+      <div className="flex-1 space-y-3 overflow-y-auto px-4 pt-4 pb-8">
         <Input
-          label="Label"
+          label={t('inspector.label')}
           value={label}
           maxLength={40}
           error={error ?? undefined}
@@ -171,8 +173,8 @@ export function ButtonInspector({
 
         <IconPicker value={icon} onChange={setIcon} />
 
-        <ColorField label="Background" value={backgroundColor} onChange={setBackgroundColor} />
-        <ColorField label="Text colour" value={textColor} onChange={setTextColor} />
+        <ColorField label={t('inspector.background')} value={backgroundColor} onChange={setBackgroundColor} />
+        <ColorField label={t('inspector.textColour')} value={textColor} onChange={setTextColor} />
 
         <AppearanceEditor
           appearance={appearance}
@@ -188,21 +190,25 @@ export function ButtonInspector({
         />
 
         <Select
-          label="Move to slot"
+          label={t('inspector.moveSlot')}
           value={String(position)}
           onChange={(event) => setPosition(Number(event.target.value))}
         >
           {Array.from({ length: capacity }, (_, index) => index).map((index) => (
             <option key={index} value={index} disabled={occupied.has(index) && index !== button.position}>
-              Slot {index + 1}
-              {occupied.has(index) ? ' (occupied)' : index === button.position ? ' (current)' : ''}
+              {t('inspector.slotOption', { slot: index + 1 })}
+              {occupied.has(index)
+                ? t('inspector.slotOccupied')
+                : index === button.position
+                  ? t('inspector.slotCurrent')
+                  : ''}
             </option>
           ))}
         </Select>
 
         <Toggle
-          label="Enabled"
-          description="Disabled buttons stay visible but will not run an action."
+          label={t('inspector.enabled')}
+          description={t('inspector.enabledDescription')}
           checked={isEnabled}
           onChange={setIsEnabled}
         />
@@ -220,7 +226,7 @@ export function ButtonInspector({
 
       <div className="space-y-2 border-t border-border-subtle px-4 py-3">
         <Button className="w-full" variant="primary" disabled={!dirty} loading={busy} onClick={handleSave}>
-          Save changes
+          {t('inspector.saveChanges')}
         </Button>
         <div className="flex gap-2">
           <Button
@@ -234,7 +240,7 @@ export function ButtonInspector({
               }
             }}
           >
-            Duplicate
+            {t('inspector.duplicate')}
           </Button>
           <Button
             className="flex-1"
@@ -244,11 +250,11 @@ export function ButtonInspector({
             disabled={busy}
             onClick={onDelete}
           >
-            Delete
+            {t('inspector.delete')}
           </Button>
         </div>
         {freeSlot === undefined ? (
-          <p className="text-[11px] text-content-subtle">No free slot on this page to duplicate into.</p>
+          <p className="text-[11px] text-content-subtle">{t('inspector.noFreeSlot')}</p>
         ) : null}
       </div>
     </div>

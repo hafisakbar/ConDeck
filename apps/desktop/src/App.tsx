@@ -6,7 +6,6 @@ import { StartupErrorScreen } from './components/layout/StartupErrorScreen';
 import { TopBar } from './components/layout/TopBar';
 import { cn } from './lib/cn';
 import type { ViewId } from './lib/navigation';
-import { ActivityPage } from './pages/ActivityPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { DevicesPage } from './pages/DevicesPage';
 import { IntegrationsPage } from './pages/IntegrationsPage';
@@ -23,7 +22,6 @@ const viewComponents: Record<ViewId, ComponentType> = {
   profiles: ProfilesPage,
   integrations: IntegrationsPage,
   devices: DevicesPage,
-  activity: ActivityPage,
   settings: SettingsPage,
 };
 

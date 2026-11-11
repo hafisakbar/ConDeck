@@ -42,6 +42,34 @@
     overflow: hidden;
   }
 
+  /*
+   * Light theme. Utilities compile to var(--color-*), so overriding the same
+   * variables keeps every component — including modals and the deck stage — in
+   * step without a second set of classes.
+   */
+  :root[data-theme='light'] {
+    --color-canvas: #eef1f7;
+    --color-surface: #ffffff;
+    --color-surface-raised: #f6f8fc;
+    --color-surface-hover: #eaeef6;
+    --color-border-subtle: rgba(15, 23, 42, 0.1);
+    --color-border-strong: rgba(15, 23, 42, 0.2);
+    --color-content: #101828;
+    --color-content-muted: #475467;
+    --color-content-subtle: #667085;
+    --color-accent: #5b3df5;
+    --color-accent-hover: #4a2ee0;
+    --color-accent-soft: #ece8ff;
+    --color-success: #12805c;
+    --color-warning: #a8620a;
+    --color-danger: #c0262f;
+    --color-danger-soft: #fdecee;
+  }
+
+  :root[data-theme='light'] body {
+    background-image: radial-gradient(1100px 620px at 50% -18%, #ffffff 0%, #eef1f7 62%);
+  }
+
   *:focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
@@ -66,6 +94,12 @@
     background:
       radial-gradient(620px 320px at 50% 32%, rgba(148, 163, 190, 0.055), transparent 70%),
       radial-gradient(900px 500px at 50% 110%, rgba(0, 0, 0, 0.55), transparent 70%);
+  }
+
+  :root[data-theme='light'] .deck-stage {
+    background:
+      radial-gradient(620px 320px at 50% 32%, rgba(91, 61, 245, 0.08), transparent 70%),
+      radial-gradient(900px 520px at 50% 108%, rgba(15, 23, 42, 0.12), transparent 72%);
   }
 }
 

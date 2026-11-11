@@ -2,7 +2,7 @@ import type {
   ActionCatalogEntry,
   ActionType,
   ButtonAppearance,
-  ButtonIconName,
+  ButtonIcon,
   DeckDetail,
   DeckSummary,
   NavigationDirection,
@@ -15,7 +15,7 @@ type DeckStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface ButtonDraft {
   label: string;
-  icon: ButtonIconName | null;
+  icon: ButtonIcon | null;
   backgroundColor: string;
   textColor: string;
   appearance: ButtonAppearance | null;
@@ -134,10 +134,36 @@ export const useDeckStore = create<DeckState>((set, get) => ({
 
     set({ profileId, status: 'loading', error: null });
     try {
-      const decks = await unwrap(getBridge().listDecks({ profileId }));
+      let decks = await unwrap(getBridge().listDecks({ profileId }));
       const current = get().detail;
       const stillExists = current && decks.some((deck) => deck.id === current.deck.id);
       const nextDeckId = stillExists ? current.deck.id : decks[0]?.id;
+
+      /*
+       * ConDeck uses one deck with one page. A profile that has never had one -
+       * a fresh install or an older profile - gets the default deck created once,
+       * so hiding the create controls never leaves the workspace empty. Existing
+       * extra decks and pages are left untouched in the database.
+       */
+      if (!nextDeckId) {
+        const created = await unwrap(
+          getBridge().createDeck({ profileId, name: 'Main deck', columns: 3, rows: 3 }),
+        );
+        decks = await unwrap(getBridge().listDecks({ profileId }));
+        set({
+          decks,
+          detail: created.pages.length > 0
+            ? created
+            : await unwrap(getBridge().createPage({ deckId: created.deck.id, name: 'Main' })),
+          activePageId: created.pages[0]?.id ?? null,
+          status: 'ready',
+        });
+        if (created.pages.length === 0) {
+          const withPage = get().detail;
+          set({ activePageId: withPage?.pages[0]?.id ?? null });
+        }
+        return;
+      }
 
       set({ decks, status: 'ready' });
 
