@@ -184,23 +184,32 @@ export function StreamDeckScene({
     <Canvas
       shadows={false}
       dpr={[1, 2]}
-      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
+      gl={{ antialias: true, alpha: true, powerPreference: 'high-performance', toneMappingExposure: 0.95 }}
       camera={{ position: [0, 6.2, 9.2], fov: FOV, near: 0.1, far: 80 }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, 0)}
     >
-      <ambientLight intensity={0.42} />
-      <hemisphereLight args={['#9aa8c4', '#0a0c11', 0.5]} />
-      <directionalLight position={[4.2, 7.8, 5.2]} intensity={2.7} color="#f3f6ff" />
-      <directionalLight position={[-6, 3.6, -2.5]} intensity={1.15} color="#6a7bb5" />
+      {/*
+        Stage lighting is deliberately diffuse. A point light used to sit just
+        above the middle keys, which pooled purple light on one key and washed
+        out its stored colour; it is gone, and the keycaps are the only coloured
+        emitters now. Two directionals from opposite corners plus a wide top wash
+        keep the chassis readable from either side without blowing out highlights,
+        while the low exposure preserves the material's graphite tone.
+      */}
+      <ambientLight intensity={0.3} color="#c6d0e4" />
+      <hemisphereLight args={['#c2cce0', '#0a0c11', 0.46]} />
+      <directionalLight position={[5.2, 8.6, 5.4]} intensity={1.32} color="#eef3ff" />
+      <directionalLight position={[-6.6, 4.4, 3.4]} intensity={0.68} color="#9dafd2" />
+      <directionalLight position={[-1.6, 5.6, -6.4]} intensity={0.5} color="#b9c6e0" />
+      <directionalLight position={[0, 2.4, 7.5]} intensity={0.32} color="#dfe7f7" />
       <spotLight
-        position={[-2.6, 6.4, 3.6]}
-        angle={0.55}
-        penumbra={0.8}
-        intensity={2.4}
-        distance={20}
-        color="#dfe6ff"
+        position={[0, 8.8, 3.2]}
+        angle={1.05}
+        penumbra={1}
+        intensity={0.55}
+        distance={34}
+        color="#e9eeff"
       />
-      <pointLight position={[0, 1.4, 1.6]} intensity={5} distance={7} color="#7657ff" />
 
       <Suspense fallback={null}>
         <DeviceStage

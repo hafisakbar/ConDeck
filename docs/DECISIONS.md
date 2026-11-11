@@ -213,6 +213,14 @@ Status aktif tidak disimpan dan tidak ditebak dari hasil klik. Renderer menurunk
 
 Pratinjau warna memakai draft di store (`appearanceDraft`) yang dibaca renderer 3D; draft dibuang saat panel ditutup dan baru ditulis ke database ketika **Save changes** ditekan. Kamera memakai OrbitControls dengan batas azimuth ±0,95 rad, polar 0,30–1,34 rad, dan zoom 55–160% dari jarak fit, sehingga rotasi tidak bisa melempar perangkat keluar layar.
 
+### ADR-035 — Hover hanya di keycap, prioritas state eksplisit, panggung tanpa point light
+
+Tiga penyebab hover tidak stabil diperbaiki di sumbernya, bukan dengan menambah delay. Pertama, keycap dulu transparan penuh (`transparent: true`, opacity 1), sehingga renderer menyortirnya bersama label dan rim dan menghasilkan artefak serta highlight yang tampak berkedip; sekarang materialnya opaque dan label menjadi anak keycap sehingga ikut turun saat ditekan. Kedua, label berada 0,002 unit di atas keycap sebagai mesh terpisah, jadi pointer melintasi dua mesh di satu tombol, dan tekstur digambar ulang setiap kali warna teks state berubah; sekarang hanya keycap yang ikut raycast (mesh dekoratif memakai `raycast` kosong), permukaan digambar putih, dan warna teks diterapkan sebagai tint material yang di-damp per frame. Ketiga, aksi berjalan di `onPointerDown` dan `onClick` sekaligus sehingga satu klik menjalankan aksi dua kali dan mulai drag orbit ikut memicu aksi; sekarang aksi di-commit saat pointer dilepas dengan toleransi gerak 6 px, dan keycap tetap tertekan selama ditahan.
+
+Prioritas state dikumpulkan di `lib/button-visual.ts`: disabled → pressed → active → selected → hover → normal. Selected bukan palette melainkan bingkai (rim + halo), jadi hover tidak pernah menggantikan tampilan tombol yang sedang dipilih, dan melepas hover selalu kembali ke state sebenarnya. Nilai glow per state dibatasi ≤1,3 karena emissive di atas itu clip ke putih dan menghilangkan warna simpanan.
+
+Pencahayaan tidak lagi memakai point light ungu berintensitas 5 di atas tengah perangkat — sumber kolam neon pada screenshot referensi — dan spot 2,4 serta directional 2,7 yang membuat sisi kanan keycap putih gosong. Penggantinya: ambient 0,3, hemisphere 0,46, key 1,32, fill 0,68 dari sisi berlawanan, rim 0,5 dari belakang, wash lebar 0,55, dan exposure 0,95. Keycap diturunkan kilaunya (roughness 0,42, clearcoat 0,25) supaya sorotan tidak menutupi warna. Warna RGB tiap tombol tetap berasal dari emissive palette masing-masing; geometri chassis tidak disentuh.
+
 ---
 
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
@@ -233,3 +241,4 @@ Pratinjau warna memakai draft di store (`appearanceDraft`) yang dibaca renderer 
 14. Screenshot di `docs/screenshots` dihasilkan `scripts/preview/capture.mjs` dengan bridge tiruan; angkanya bukan bukti integrasi database/OBS.
 15. Status mute hanya akurat untuk input yang pernah dilaporkan OBS lewat event `InputMuteStateChanged` atau dibaca setelah aksi mute; input yang belum pernah disentuh sebelum ConDeck terhubung tampil normal sampai statusnya diketahui.
 16. Rotasi/zoom 3D baru diuji di Chromium headless (SwiftShader) lewat harness, belum di Electron/Windows dengan GPU nyata; belum ada pengukuran FPS pada laptop kelas menengah.
+17. Hover diukur lewat piksel (`scripts/preview/verify-hover.mjs`) pada dua tombol bertetangga, bukan lewat event log React, dan hanya di Chromium headless. Renderer SwiftShader di container ini mati setelah sekitar enam screenshot, sehingga skrip verifikasi memakai beberapa sesi browser; angka “tidak berubah” karena itu berarti selisih ≤0,8 level warna, bukan nol absolut.
