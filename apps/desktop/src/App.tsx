@@ -5,6 +5,7 @@ import { SoundPlayer } from './components/sounds/SoundPlayer';
 import { NavigationDrawer } from './components/layout/NavigationDrawer';
 import { StartupErrorScreen } from './components/layout/StartupErrorScreen';
 import { TopBar } from './components/layout/TopBar';
+import { useT } from './i18n';
 import { cn } from './lib/cn';
 import type { ViewId } from './lib/navigation';
 import { DashboardPage } from './pages/DashboardPage';
@@ -29,6 +30,7 @@ const viewComponents: Record<ViewId, ComponentType> = {
 };
 
 export default function App() {
+  const t = useT();
   const status = useAppStore((state) => state.status);
   const error = useAppStore((state) => state.error);
   const refresh = useAppStore((state) => state.refresh);
@@ -50,7 +52,7 @@ export default function App() {
   }
 
   if (status === 'error') {
-    return <StartupErrorScreen message={error ?? 'Unknown error.'} onRetry={() => void refresh()} />;
+    return <StartupErrorScreen message={error ?? t('app.unknownError')} onRetry={() => void refresh()} />;
   }
 
   const Page = viewComponents[view];

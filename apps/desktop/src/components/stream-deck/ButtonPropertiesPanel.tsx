@@ -7,6 +7,7 @@ import type {
 import { motion, useReducedMotion } from 'framer-motion';
 import { Plus, X } from 'lucide-react';
 import { useEffect } from 'react';
+import { useT } from '../../i18n';
 import type { ExecutionState } from '../../stores/deck-store';
 import { Button } from '../ui/Button';
 import { ButtonInspector, type ButtonPatch } from '../deck/ButtonInspector';
@@ -54,6 +55,7 @@ export function ButtonPropertiesPanel({
   onRemoveAction,
   onRunAction,
 }: ButtonPropertiesPanelProps) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -77,7 +79,7 @@ export function ButtonPropertiesPanel({
     <motion.aside
       role="dialog"
       aria-modal="false"
-      aria-label={button ? 'Button properties' : 'Add button'}
+      aria-label={button ? t('inspector.title') : t('inspector.addTitle')}
       initial={reduceMotion ? false : { x: 24, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 0.61, 0.36, 1] }}
@@ -105,13 +107,15 @@ export function ButtonPropertiesPanel({
         <>
           <div className="flex items-start justify-between gap-3 border-b border-border-subtle px-4 py-3">
             <div>
-              <h2 className="text-sm font-semibold text-content">Add button</h2>
-              <p className="mt-0.5 text-[11px] text-content-subtle">Slot {slot.position + 1}</p>
+              <h2 className="text-sm font-semibold text-content">{t('inspector.addTitle')}</h2>
+              <p className="mt-0.5 text-[11px] text-content-subtle">
+                {t('inspector.slot', { slot: slot.position + 1 })}
+              </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Close properties"
+              aria-label={t('inspector.close')}
               className="text-content-muted transition-colors hover:text-content"
             >
               <X className="size-4" aria-hidden />
@@ -122,10 +126,7 @@ export function ButtonPropertiesPanel({
             <span className="grid size-12 place-items-center rounded-2xl border border-dashed border-border-strong text-content-subtle">
               <Plus className="size-5" aria-hidden />
             </span>
-            <p className="text-xs leading-relaxed text-content-muted">
-              This slot is empty. Add a button, then give it a label, icon and an action. Nothing
-              runs until you press it in Live mode.
-            </p>
+            <p className="text-xs leading-relaxed text-content-muted">{t('inspector.addHint')}</p>
           </div>
 
           <div className="border-t border-border-subtle px-4 py-3">
@@ -136,7 +137,7 @@ export function ButtonPropertiesPanel({
               icon={<Plus className="size-3.5" aria-hidden />}
               onClick={() => onCreate(slot.position)}
             >
-              Add button here
+              {t('inspector.addHere')}
             </Button>
           </div>
         </>

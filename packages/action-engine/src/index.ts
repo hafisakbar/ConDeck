@@ -17,5 +17,6 @@ export type {
   ActionPorts,
   NavigationPort,
   ObsPort,
+  SoundboardPort,
   SystemPort,
 } from './ports';

@@ -82,11 +82,6 @@ function bootstrap(): void {
   });
   obsService = activeObsService;
 
-  const actionPorts = createActionPorts({
-    sendNavigation: (request) => broadcast('navigation:request', request),
-    obs: activeObsService.getActionPort(),
-  });
-
   const soundService = createSoundService({
     db: database.db,
     soundsDir: join(app.getPath('userData'), 'sounds'),
@@ -94,11 +89,15 @@ function bootstrap(): void {
     logger: activeLogger,
   });
 
-  const actions = createActionService({
-    db: database.db,
-    ports: actionPorts,
-    playSound: (soundId, mode) => soundService.play(soundId, mode),
+  const actionPorts = createActionPorts({
+    sendNavigation: (request) => broadcast('navigation:request', request),
+    obs: activeObsService.getActionPort(),
+    soundboard: {
+      play: async (soundId, mode) => soundService.play(soundId, mode).name,
+    },
   });
+
+  const actions = createActionService({ db: database.db, ports: actionPorts });
 
   const activeRemoteService = createRemoteService({
     db: database.db,

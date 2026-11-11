@@ -1,4 +1,10 @@
-import type { ActionPorts, NavigationPort, ObsPort, SystemPort } from '@condeck/action-engine';
+import type {
+  ActionPorts,
+  NavigationPort,
+  ObsPort,
+  SoundboardPort,
+  SystemPort,
+} from '@condeck/action-engine';
 import { AppError, type NavigationRequest } from '@condeck/shared';
 import { shell } from 'electron';
 
@@ -42,12 +48,18 @@ export interface ActionPortsOptions {
   sendNavigation: (request: NavigationRequest) => void;
   /** Live OBS connection owned by the OBS service. */
   obs: ObsPort;
+  soundboard: SoundboardPort;
 }
 
-export function createActionPorts({ sendNavigation, obs }: ActionPortsOptions): ActionPorts {
+export function createActionPorts({
+  sendNavigation,
+  obs,
+  soundboard,
+}: ActionPortsOptions): ActionPorts {
   return {
     obs,
     system: createSystemPort(),
     navigation: createNavigationPort(sendNavigation),
+    soundboard,
   };
 }

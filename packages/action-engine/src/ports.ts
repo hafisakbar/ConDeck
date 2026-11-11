@@ -41,8 +41,18 @@ export interface NavigationPort {
   navigate(direction: NavigationDirection, context: ActionContext): void | Promise<void>;
 }
 
+/**
+ * Soundboard playback lives in the renderer (it owns the audio device), so the
+ * desktop port validates the file and forwards the request. Returns the sound
+ * name so the execution message can mention it.
+ */
+export interface SoundboardPort {
+  play(soundId: string, mode: 'restart' | 'ignore'): Promise<string>;
+}
+
 export interface ActionPorts {
   obs: ObsPort;
   system: SystemPort;
   navigation: NavigationPort;
+  soundboard: SoundboardPort;
 }

@@ -94,7 +94,7 @@ export const actionConfigSchemas = {
   SYSTEM_OPEN_URL: z.strictObject({ url: urlSchema }),
   SOUNDBOARD_PLAY: z.strictObject({
     soundId: z.uuid('Choose a sound from the sound library.'),
-    mode: soundPlayModeSchema,
+    mode: soundPlayModeSchema.default('restart'),
   }),
   NAV_NEXT_PAGE: noConfigSchema,
   NAV_PREV_PAGE: noConfigSchema,
@@ -243,7 +243,14 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Play sound',
     description: 'Play an audio file from the sound library through the default output device.',
     requiresObs: false,
-    fields: [],
+    fields: [
+      {
+        key: 'soundId',
+        label: 'Sound',
+        type: 'text',
+        help: 'Sounds are managed in the Sound Library.',
+      },
+    ],
   },
   {
     type: 'NAV_NEXT_PAGE',
@@ -305,7 +312,7 @@ export function parseActionConfig(
 /** Starting values for the editor, derived from the declared fields. */
 export function defaultActionConfig(type: ActionType): Record<string, unknown> {
   if (type === 'SOUNDBOARD_PLAY') {
-    return { soundId: '', mode: 'restart' };
+    return { soundId: '' };
   }
   const config: Record<string, unknown> = {};
   for (const field of getActionCatalogEntry(type).fields) {

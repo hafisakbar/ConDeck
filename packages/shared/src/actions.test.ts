@@ -37,6 +37,7 @@ describe('action contract', () => {
       OBS_SET_MUTE: { inputName: 'Mic/Aux', muted: true },
       SYSTEM_OPEN_APP: { applicationPath: 'C:\\Tools\\app.exe' },
       SYSTEM_OPEN_URL: { url: 'https://example.com' },
+      SOUNDBOARD_PLAY: { soundId: '5f0d1a2b-3c4d-4e5f-8a9b-0c1d2e3f4a5b' },
     };
 
     for (const type of actionTypes) {
