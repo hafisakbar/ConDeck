@@ -14,7 +14,16 @@ import { createSoundService } from './services/sound.service';
 import { createRemoteService, type RemoteService } from './services/remote.service';
 import { createMainWindow } from './window';
 
+// Kept stable so Windows treats this as the same installed application.
 const APP_USER_MODEL_ID = 'com.condeck.app';
+
+/*
+ * The rename must not move the application data. Electron derives `userData`
+ * from the product name, so point it at the folder the previous name used
+ * before anything reads the database, sounds or custom icons.
+ */
+app.setName('StreamKey');
+app.setPath('userData', join(app.getPath('appData'), 'ConDeck'));
 
 let logger: FileLogger | null = null;
 let obsService: ObsService | null = null;
@@ -51,7 +60,7 @@ function resolveMobileAssetsDir(): string | null {
 function buildAppInfo(): AppInfo {
   const activeLogger = createLogger();
   return {
-    name: 'ConDeck',
+    name: 'StreamKey',
     version: app.getVersion(),
     platform: `${process.platform} ${process.arch}`,
     isPackaged: app.isPackaged,
@@ -62,7 +71,7 @@ function buildAppInfo(): AppInfo {
 
 function bootstrap(): void {
   const activeLogger = createLogger();
-  activeLogger.info('ConDeck starting', { version: app.getVersion(), packaged: app.isPackaged });
+  activeLogger.info('StreamKey starting', { version: app.getVersion(), packaged: app.isPackaged });
 
   const database = initDatabase(activeLogger);
 
@@ -121,7 +130,7 @@ function bootstrap(): void {
 
   recordActivity(database.db, {
     eventType: 'APP_STARTED',
-    description: `ConDeck ${app.getVersion()} started`,
+    description: `StreamKey ${app.getVersion()} started`,
   });
 
   createMainWindow({
@@ -157,7 +166,7 @@ if (!hasSingleInstanceLock) {
       try {
         bootstrap();
       } catch (error) {
-        createLogger().error('ConDeck failed to start', {
+        createLogger().error('StreamKey failed to start', {
           error: error instanceof Error ? error.message : String(error),
         });
         app.quit();
@@ -178,7 +187,7 @@ if (!hasSingleInstanceLock) {
   });
 
   app.on('before-quit', () => {
-    logger?.info('ConDeck shutting down');
+    logger?.info('StreamKey shutting down');
     void remoteService?.dispose();
     void obsService?.dispose();
     closeDatabase();

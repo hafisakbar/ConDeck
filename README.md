@@ -1,4 +1,4 @@
-<h1 align="center">ConDeck</h1>
+<h1 align="center">StreamKey</h1>
 
 <p align="center">
   <strong>Your Stream. Your Control.</strong><br />
@@ -14,7 +14,7 @@
   <img alt="OBS WebSocket" src="https://img.shields.io/badge/OBS%20WebSocket-v5-302E31" />
 </p>
 
-ConDeck memindahkan kontrol OBS Studio ke layar yang benar-benar bisa kamu sentuh. Aplikasi desktop menyimpan deck, menjalankan action, dan menjadi host; HP hanya membuka remote lewat browser — tanpa aplikasi tambahan, tanpa akun, tanpa cloud. Semua data tinggal di komputer kamu.
+StreamKey memindahkan kontrol OBS Studio ke layar yang benar-benar bisa kamu sentuh. Aplikasi desktop menyimpan deck, menjalankan action, dan menjadi host; HP hanya membuka remote lewat browser — tanpa aplikasi tambahan, tanpa akun, tanpa cloud. Semua data tinggal di komputer kamu.
 
 - **Bangun deck sesuai alur stream kamu.** Grid 1–8 baris/kolom, banyak halaman, tombol dengan ikon dan warna sendiri.
 - **Satu tombol, satu aksi nyata.** Pindah scene, mulai/stop streaming dan recording, mute audio — dikonfirmasi oleh respons OBS, bukan asumsi sukses.
@@ -22,9 +22,9 @@ ConDeck memindahkan kontrol OBS Studio ke layar yang benar-benar bisa kamu sentu
 
 ## Antarmuka
 
-![ConDeck 3D deck](docs/screenshots/workspace.png)
+![StreamKey 3D deck](docs/screenshots/workspace.png)
 
-Landing page ConDeck adalah perangkat stream deck 3D yang bisa diputar, diperbesar, dan ditekan langsung. Tidak ada sidebar permanen: navigasi dibuka lewat tombol menu di kiri atas, sehingga panggung deck memakai seluruh jendela.
+Landing page StreamKey adalah perangkat stream deck 3D yang bisa diputar, diperbesar, dan ditekan langsung. Tidak ada sidebar permanen: navigasi dibuka lewat tombol menu di kiri atas, sehingga panggung deck memakai seluruh jendela.
 
 - **Bisa diputar seperti perangkat sungguhan.** Drag untuk memutar (kiri/kanan dan atas/bawah), scroll untuk zoom, dengan batas sudut dan jarak supaya perangkat tidak pernah hilang dari layar. Tombol **Reset view** mengembalikan sudut awal, **Fit** membingkai seluruh perangkat. Gestur sentuh ikut bekerja lewat OrbitControls.
 - **Tombol berperilaku fisik.** Keycap turun saat ditekan lalu naik kembali dengan easing, dan punya tampilan berbeda untuk normal, hover, selected, pressed, active, serta disabled.
@@ -49,7 +49,7 @@ Perubahan warna disimpan di kolom `buttons.appearance_json` (migrasi `0001_butto
 
 ```mermaid
 flowchart LR
-    subgraph Desktop["ConDeck Desktop (Electron)"]
+    subgraph Desktop["StreamKey Desktop (Electron)"]
         UI["Renderer<br/>React + Zustand"] -->|"IPC (allowlist + Zod)"| MAIN["Main process"]
         MAIN --> DB[("SQLite<br/>Drizzle ORM")]
         MAIN --> AE["Action Engine"]
@@ -57,7 +57,7 @@ flowchart LR
         MAIN --> REMOTE["Remote server<br/>HTTP + WebSocket"]
     end
 
-    PHONE["ConDeck Mobile (PWA)<br/>di browser HP"] -->|"QR pairing"| REMOTE
+    PHONE["StreamKey Mobile (PWA)<br/>di browser HP"] -->|"QR pairing"| REMOTE
     PHONE -->|"button.press"| REMOTE
     REMOTE --> AE
 ```
@@ -73,7 +73,7 @@ Renderer tidak pernah menyentuh Node.js, SQLite, atau OBS secara langsung. HP ti
 | **Profil**         | Edit dan hapus profil beserta seluruh deck, halaman, dan tombol di dalamnya.                                                                             |
 | **Action**         | 11 action: 7 untuk OBS, 2 System (buka aplikasi, buka URL), 2 Navigation (halaman berikutnya/sebelumnya). Satu action per tombol.                        |
 | **Eksekusi**       | Validasi schema per action sebelum disimpan, eksekusi lewat registry berdasarkan button id, timeout 10 detik, feedback sukses/gagal langsung di tombol.   |
-| **OBS**            | Koneksi OBS WebSocket v5, test connection, connect/disconnect, daftar scene otomatis, sinkronisasi status real-time saat OBS diubah dari luar ConDeck.    |
+| **OBS**            | Koneksi OBS WebSocket v5, test connection, connect/disconnect, daftar scene otomatis, sinkronisasi status real-time saat OBS diubah dari luar StreamKey.    |
 | **Remote**         | Server LAN (default port `43821`), QR pairing 2 menit sekali pakai (5 percobaan), kredensial perangkat 32 byte, cabut akses, reconnect otomatis.          |
 | **Remote di HP**   | Deck aktif tampil apa adanya, `button.press` menjalankan action yang sama, status OBS dan hasil action ikut tampil, deck yang diubah langsung dikirim ulang. |
 | **Penyimpanan**    | Semua perubahan langsung tersimpan ke SQLite lokal dan tetap ada setelah aplikasi ditutup.                                                                |
@@ -112,7 +112,7 @@ pnpm dist:win
 
 Menghasilkan installer NSIS di `release/`:
 
-- `ConDeck-0.1.0-x64.exe` — installer (pilih folder instalasi, shortcut Desktop + Start Menu, tanpa hak admin).
+- `StreamKey-0.1.0-x64.exe` — installer (pilih folder instalasi, shortcut Desktop + Start Menu, tanpa hak admin).
 - `win-unpacked/` — versi portable untuk pemeriksaan cepat.
 
 Isi paket: renderer di `app.asar`, main/preload Electron, PWA di `resources/mobile`, dan `better-sqlite3` yang sudah di-rebuild. Ingin memeriksa isi paket tanpa membuat installer? Jalankan `pnpm --filter @condeck/desktop dist:dir`.
@@ -123,8 +123,8 @@ Installer juga dibangun otomatis di GitHub Actions (`release.yml`, `windows-late
 
 | Perintah           | Fungsi                                                                    |
 | ------------------ | ------------------------------------------------------------------------- |
-| `pnpm dev`         | Jalankan ConDeck Desktop (development)                                    |
-| `pnpm dev:mobile`  | Jalankan ConDeck Mobile (Vite, port 5274) untuk pengembangan UI remote    |
+| `pnpm dev`         | Jalankan StreamKey Desktop (development)                                    |
+| `pnpm dev:mobile`  | Jalankan StreamKey Mobile (Vite, port 5274) untuk pengembangan UI remote    |
 | `pnpm build`       | Build produksi desktop (main, preload, renderer) + PWA mobile             |
 | `pnpm typecheck`   | TypeScript check seluruh workspace                                        |
 | `pnpm lint`        | ESLint                                                                    |

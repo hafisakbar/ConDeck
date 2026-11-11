@@ -109,7 +109,7 @@ export function sendMobileNotBuiltPage(response: ServerResponse): void {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>ConDeck Remote</title>
+    <title>StreamKey Remote</title>
     <style>
       body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #0a0c11; color: #e8ebf2; font-family: 'Segoe UI', system-ui, sans-serif; padding: 24px; }
       main { max-width: 34rem; }
@@ -120,7 +120,7 @@ export function sendMobileNotBuiltPage(response: ServerResponse): void {
   </head>
   <body>
     <main>
-      <h1>ConDeck Remote is not built yet</h1>
+      <h1>StreamKey Remote is not built yet</h1>
       <p>The desktop host is running and its WebSocket server is ready, but the mobile app bundle is missing.</p>
       <p>Run <code>pnpm --filter @condeck/mobile build</code> (or <code>pnpm build</code>) on the desktop, then reload this page.</p>
     </main>

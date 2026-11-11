@@ -41,7 +41,7 @@ type ObsService = import('../services/obs.service').ObsService;
 type RemoteService = import('../services/remote.service').RemoteService;
 
 const appInfo: AppInfo = {
-  name: 'ConDeck',
+  name: 'StreamKey',
   version: '0.1.0-test',
   platform: 'win32 x64',
   isPackaged: false,

@@ -82,7 +82,7 @@ export const listActivityInputSchema = z.object({
 export type ListActivityInput = z.infer<typeof listActivityInputSchema>;
 
 export const appInfoSchema = z.object({
-  name: z.literal('ConDeck'),
+  name: z.literal('StreamKey'),
   version: z.string(),
   platform: z.string(),
   isPackaged: z.boolean(),

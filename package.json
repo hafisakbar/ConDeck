@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "ConDeck — virtual Stream Deck for OBS Studio. Desktop host + mobile remote.",
+  "description": "StreamKey — virtual Stream Deck for OBS Studio. Desktop host + mobile remote.",
   "packageManager": "pnpm@10.20.0",
   "engines": {
     "node": ">=20.19.0"

@@ -237,10 +237,10 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
         client,
         result.code,
         result.code === 'TOKEN_EXPIRED'
-          ? 'This pairing code expired. Create a new one in ConDeck Desktop → Devices.'
+          ? 'This pairing code expired. Create a new one in StreamKey Desktop → Devices.'
           : result.code === 'RATE_LIMITED'
-            ? 'Too many pairing attempts. Create a new code in ConDeck Desktop → Devices.'
-            : 'This pairing code is not valid. Create a new one in ConDeck Desktop → Devices.',
+            ? 'Too many pairing attempts. Create a new code in StreamKey Desktop → Devices.'
+            : 'This pairing code is not valid. Create a new one in StreamKey Desktop → Devices.',
         message.requestId,
       );
 
@@ -272,7 +272,7 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
     logSafely(logger, 'Remote device paired', { deviceId: device.id, deviceType: device.deviceType });
     record({
       eventType: 'DEVICE_PAIRED',
-      description: `Device "${device.deviceName}" paired with ConDeck`,
+      description: `Device "${device.deviceName}" paired with StreamKey`,
       deviceId: device.id,
       metadata: { deviceType: device.deviceType },
     });
@@ -285,13 +285,13 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
     const record_ = getDeviceCredential(db, message.payload.deviceId);
 
     if (record_ === null || !verifyCredential(message.payload.deviceCredential, record_.credentialHash)) {
-      sendError(client, 'INVALID_TOKEN', 'This device is not recognised. Pair it again from ConDeck Desktop.', message.requestId);
+      sendError(client, 'INVALID_TOKEN', 'This device is not recognised. Pair it again from StreamKey Desktop.', message.requestId);
       closeClient(client, remoteCloseCodes.unauthorized, 'Invalid device credential');
       return;
     }
 
     if (!record_.isAuthorized) {
-      sendError(client, 'DEVICE_REVOKED', 'Access for this device was revoked in ConDeck Desktop.', message.requestId);
+      sendError(client, 'DEVICE_REVOKED', 'Access for this device was revoked in StreamKey Desktop.', message.requestId);
       closeClient(client, remoteCloseCodes.unauthorized, 'Device revoked');
       return;
     }
@@ -306,7 +306,7 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
     logSafely(logger, 'Remote device reconnected', { deviceId: record_.id });
     record({
       eventType: 'DEVICE_CONNECTED',
-      description: `Device "${record_.deviceName}" connected to ConDeck`,
+      description: `Device "${record_.deviceName}" connected to StreamKey`,
       deviceId: record_.id,
     });
   }
@@ -525,7 +525,7 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
         logger?.error('Remote message failed', {
           error: error instanceof Error ? error.message : String(error),
         });
-        sendError(client, 'SERVER_ERROR', 'ConDeck could not handle that request.', null);
+        sendError(client, 'SERVER_ERROR', 'StreamKey could not handle that request.', null);
       });
   }
 
@@ -593,7 +593,7 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
       response.setHeader('Cache-Control', 'no-store');
       response.statusCode = 200;
       response.end(
-        JSON.stringify({ ok: true, name: 'ConDeck', protocolVersion: remoteProtocolVersion }),
+        JSON.stringify({ ok: true, name: 'StreamKey', protocolVersion: remoteProtocolVersion }),
       );
       return;
     }
@@ -800,7 +800,7 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
   function disconnectDevice(deviceId: string): void {
     for (const client of clients) {
       if (client.deviceId === deviceId) {
-        sendError(client, 'DEVICE_REVOKED', 'Access for this device was revoked in ConDeck Desktop.', null);
+        sendError(client, 'DEVICE_REVOKED', 'Access for this device was revoked in StreamKey Desktop.', null);
         closeClient(client, remoteCloseCodes.unauthorized, 'Device revoked');
       }
     }

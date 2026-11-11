@@ -9,8 +9,8 @@ export const en = {
     unknownError: 'Unknown error.',
   },
   boot: {
-    starting: 'Starting ConDeck…',
-    errorTitle: 'ConDeck could not load its data',
+    starting: 'Starting StreamKey…',
+    errorTitle: 'StreamKey could not load its data',
     errorHint:
       'If this keeps happening, check the log file from the Electron user data folder.',
     retry: 'Try again',
@@ -63,7 +63,7 @@ export const en = {
     NOT_CONFIGURED: 'Not configured',
   },
   dashboard: {
-    welcomeTitle: 'Welcome to ConDeck',
+    welcomeTitle: 'Welcome to StreamKey',
     welcomeDescription:
       'Create your first profile. Profiles keep separate decks for streaming, gaming or anything else.',
     obs: 'OBS Studio',
@@ -73,7 +73,7 @@ export const en = {
     profilesConfiguredPlural: '{count} profiles configured',
     onlinePaired: 'online / paired',
     recentActivity: 'Recent activity',
-    recentActivityDescription: 'Latest events recorded by ConDeck.',
+    recentActivityDescription: 'Latest events recorded by StreamKey.',
     quickActions: 'Quick actions',
     quickActionsDescription: 'Jump straight to the next step.',
     openDeck: 'Open My Deck',
@@ -88,7 +88,7 @@ export const en = {
     chooseFiles: 'Choose files',
     emptyTitle: 'No sounds yet',
     emptyDescription:
-      'Add MP3, WAV, OGG, M4A or FLAC files. They are copied into ConDeck and stay available after a restart.',
+      'Add MP3, WAV, OGG, M4A or FLAC files. They are copied into StreamKey and stay available after a restart.',
     preview: 'Play',
     stop: 'Stop',
     stopAll: 'Stop all',
@@ -104,7 +104,7 @@ export const en = {
   activity: {
     title: 'Activity',
     emptyTitle: 'No activity yet',
-    emptyDescription: 'Actions you take in ConDeck will be recorded here.',
+    emptyDescription: 'Actions you take in StreamKey will be recorded here.',
     allTitle: 'All activity',
     allDescription: '{count} recorded events, newest first.',
     eventsOnPage: 'Showing {from}–{to} of {total}',
@@ -146,7 +146,7 @@ export const en = {
     attention: 'Needs attention',
     stopped: 'Stopped',
     enable: 'Enable the mobile remote',
-    enableDescription: 'The server starts with ConDeck when this is on.',
+    enableDescription: 'The server starts with StreamKey when this is on.',
     port: 'Port',
     portHint: 'Default 43821. Change it if another program already uses that port.',
     save: 'Save settings',
@@ -161,7 +161,7 @@ export const en = {
       'No local network address was found. Connect this PC to Wi-Fi or Ethernet, then restart the server.',
     startToSee: 'Start the server to see the address your phone should open.',
     firewall:
-      'The phone must be on the same Wi-Fi or hotspot. If the page will not open, allow ConDeck through Windows Firewall for private networks and turn off client isolation on the router. Plain HTTP is used on the LAN, so only pair devices you trust.',
+      'The phone must be on the same Wi-Fi or hotspot. If the page will not open, allow StreamKey through Windows Firewall for private networks and turn off client isolation on the router. Plain HTTP is used on the LAN, so only pair devices you trust.',
     addressHint:
       'The pairing code uses the first address. If the phone times out, try the next one: adapters such as VirtualBox, Hyper-V or a VPN appear in this list but a phone cannot reach them.',
     pairTitle: 'Pair a phone',
@@ -177,9 +177,9 @@ export const en = {
     pairingLink: 'Pairing link',
     pairingCode: 'Pairing code',
     noPairingTitle: 'No active pairing code',
-    noPairingDescription: 'Create a code, then scan it with the phone camera to open ConDeck Remote.',
+    noPairingDescription: 'Create a code, then scan it with the phone camera to open StreamKey Remote.',
     pairedTitle: 'Paired devices',
-    pairedDescription: 'Devices authorised to control this ConDeck instance.',
+    pairedDescription: 'Devices authorised to control this StreamKey instance.',
     connectedCount: '{count} connected',
     noDevicesTitle: 'No devices paired',
     noDevicesDescription:
@@ -191,7 +191,7 @@ export const en = {
     revoke: 'Revoke',
     revokeTitle: 'Revoke this device?',
     revokeDescription:
-      '"{name}" will be disconnected and must be paired again to control ConDeck.',
+      '"{name}" will be disconnected and must be paired again to control StreamKey.',
     revokeAccess: 'Revoke access',
     revokeBody:
       'The pairing code is not affected. To let this phone back in, create a new pairing code and scan it again.',
@@ -199,7 +199,7 @@ export const en = {
   },
   integrations: {
     obsDescription:
-      'Connect ConDeck to OBS through OBS WebSocket v5. Enable it in OBS under Tools → WebSocket Server Settings.',
+      'Connect StreamKey to OBS through OBS WebSocket v5. Enable it in OBS under Tools → WebSocket Server Settings.',
     connection: 'Connection',
     loadingStatus: 'Loading OBS status…',
     unknown: 'Unknown',
@@ -239,7 +239,7 @@ export const en = {
     close: 'Close',
   },
   settings: {
-    title: 'About ConDeck',
+    title: 'About StreamKey',
     description: 'Application details and local storage locations.',
     application: 'Application',
     version: 'Version',
@@ -252,8 +252,8 @@ export const en = {
     developer: 'Developer',
     descriptionLabel: 'About',
     descriptionText:
-      'ConDeck is a local-first stream deck for OBS Studio. It keeps your decks, actions and settings on this computer.',
-    copyright: '© {year} ConDeck',
+      'StreamKey is a local-first stream deck for OBS Studio. It keeps your decks, actions and settings on this computer.',
+    copyright: '© {year} StreamKey',
   },
   deck: {
     edit: 'Edit',
@@ -444,8 +444,8 @@ export const id: Messages = {
     unknownError: 'Kesalahan tidak diketahui.',
   },
   boot: {
-    starting: 'Menjalankan ConDeck…',
-    errorTitle: 'ConDeck gagal memuat data',
+    starting: 'Menjalankan StreamKey…',
+    errorTitle: 'StreamKey gagal memuat data',
     errorHint:
       'Jika terus terjadi, periksa berkas log di folder data pengguna Electron.',
     retry: 'Coba lagi',
@@ -498,7 +498,7 @@ export const id: Messages = {
     NOT_CONFIGURED: 'Belum dikonfigurasi',
   },
   dashboard: {
-    welcomeTitle: 'Selamat datang di ConDeck',
+    welcomeTitle: 'Selamat datang di StreamKey',
     welcomeDescription:
       'Buat profil pertama Anda. Profil menyimpan deck terpisah untuk streaming, gaming, atau keperluan lain.',
     obs: 'OBS Studio',
@@ -508,7 +508,7 @@ export const id: Messages = {
     profilesConfiguredPlural: '{count} profil dikonfigurasi',
     onlinePaired: 'online / terpasang',
     recentActivity: 'Aktivitas terbaru',
-    recentActivityDescription: 'Peristiwa terakhir yang dicatat ConDeck.',
+    recentActivityDescription: 'Peristiwa terakhir yang dicatat StreamKey.',
     quickActions: 'Aksi cepat',
     quickActionsDescription: 'Langsung menuju langkah berikutnya.',
     openDeck: 'Buka Deck Saya',
@@ -523,7 +523,7 @@ export const id: Messages = {
     chooseFiles: 'Pilih berkas',
     emptyTitle: 'Belum ada suara',
     emptyDescription:
-      'Tambahkan berkas MP3, WAV, OGG, M4A, atau FLAC. Berkas disalin ke ConDeck dan tetap tersedia setelah aplikasi dibuka kembali.',
+      'Tambahkan berkas MP3, WAV, OGG, M4A, atau FLAC. Berkas disalin ke StreamKey dan tetap tersedia setelah aplikasi dibuka kembali.',
     preview: 'Putar',
     stop: 'Hentikan',
     stopAll: 'Hentikan semua',
@@ -539,7 +539,7 @@ export const id: Messages = {
   activity: {
     title: 'Aktivitas',
     emptyTitle: 'Belum ada aktivitas',
-    emptyDescription: 'Tindakan yang Anda lakukan di ConDeck akan dicatat di sini.',
+    emptyDescription: 'Tindakan yang Anda lakukan di StreamKey akan dicatat di sini.',
     allTitle: 'Semua aktivitas',
     allDescription: '{count} peristiwa tercatat, terbaru lebih dulu.',
     eventsOnPage: 'Menampilkan {from}–{to} dari {total}',
@@ -581,7 +581,7 @@ export const id: Messages = {
     attention: 'Perlu perhatian',
     stopped: 'Berhenti',
     enable: 'Aktifkan remote mobile',
-    enableDescription: 'Server ikut berjalan bersama ConDeck saat opsi ini aktif.',
+    enableDescription: 'Server ikut berjalan bersama StreamKey saat opsi ini aktif.',
     port: 'Port',
     portHint: 'Bawaan 43821. Ganti jika port itu sudah dipakai program lain.',
     save: 'Simpan pengaturan',
@@ -596,7 +596,7 @@ export const id: Messages = {
       'Alamat jaringan lokal tidak ditemukan. Hubungkan PC ini ke Wi-Fi atau Ethernet, lalu jalankan ulang server.',
     startToSee: 'Jalankan server untuk melihat alamat yang perlu dibuka di ponsel.',
     firewall:
-      'Ponsel harus berada di Wi-Fi atau hotspot yang sama. Jika halaman tidak terbuka, izinkan ConDeck di Windows Firewall untuk jaringan privat dan matikan client isolation pada router. Koneksi memakai HTTP biasa di LAN, jadi hanya pasangkan perangkat yang Anda percaya.',
+      'Ponsel harus berada di Wi-Fi atau hotspot yang sama. Jika halaman tidak terbuka, izinkan StreamKey di Windows Firewall untuk jaringan privat dan matikan client isolation pada router. Koneksi memakai HTTP biasa di LAN, jadi hanya pasangkan perangkat yang Anda percaya.',
     addressHint:
       'Kode pairing memakai alamat pertama. Jika ponsel timeout, coba alamat berikutnya: adapter seperti VirtualBox, Hyper-V, atau VPN ikut muncul di daftar ini tetapi tidak bisa dijangkau ponsel.',
     pairTitle: 'Pasangkan ponsel',
@@ -612,9 +612,9 @@ export const id: Messages = {
     pairingLink: 'Tautan pairing',
     pairingCode: 'Kode pairing',
     noPairingTitle: 'Tidak ada kode pairing aktif',
-    noPairingDescription: 'Buat kode, lalu pindai dengan kamera ponsel untuk membuka ConDeck Remote.',
+    noPairingDescription: 'Buat kode, lalu pindai dengan kamera ponsel untuk membuka StreamKey Remote.',
     pairedTitle: 'Perangkat terpasang',
-    pairedDescription: 'Perangkat yang diizinkan mengendalikan ConDeck ini.',
+    pairedDescription: 'Perangkat yang diizinkan mengendalikan StreamKey ini.',
     connectedCount: '{count} terhubung',
     noDevicesTitle: 'Belum ada perangkat',
     noDevicesDescription:
@@ -626,7 +626,7 @@ export const id: Messages = {
     revoke: 'Cabut',
     revokeTitle: 'Cabut perangkat ini?',
     revokeDescription:
-      '"{name}" akan terputus dan harus dipasangkan lagi untuk mengendalikan ConDeck.',
+      '"{name}" akan terputus dan harus dipasangkan lagi untuk mengendalikan StreamKey.',
     revokeAccess: 'Cabut akses',
     revokeBody:
       'Kode pairing tidak terpengaruh. Agar ponsel ini bisa masuk lagi, buat kode pairing baru dan pindai ulang.',
@@ -634,7 +634,7 @@ export const id: Messages = {
   },
   integrations: {
     obsDescription:
-      'Hubungkan ConDeck ke OBS melalui OBS WebSocket v5. Aktifkan di OBS pada Tools → WebSocket Server Settings.',
+      'Hubungkan StreamKey ke OBS melalui OBS WebSocket v5. Aktifkan di OBS pada Tools → WebSocket Server Settings.',
     connection: 'Koneksi',
     loadingStatus: 'Memuat status OBS…',
     unknown: 'Tidak diketahui',
@@ -674,7 +674,7 @@ export const id: Messages = {
     close: 'Tutup',
   },
   settings: {
-    title: 'Tentang ConDeck',
+    title: 'Tentang StreamKey',
     description: 'Detail aplikasi dan lokasi penyimpanan lokal.',
     application: 'Aplikasi',
     version: 'Versi',
@@ -687,8 +687,8 @@ export const id: Messages = {
     developer: 'Pengembang',
     descriptionLabel: 'Tentang',
     descriptionText:
-      'ConDeck adalah stream deck lokal untuk OBS Studio. Deck, aksi, dan pengaturan Anda disimpan di komputer ini.',
-    copyright: '© {year} ConDeck',
+      'StreamKey adalah stream deck lokal untuk OBS Studio. Deck, aksi, dan pengaturan Anda disimpan di komputer ini.',
+    copyright: '© {year} StreamKey',
   },
   deck: {
     edit: 'Edit',

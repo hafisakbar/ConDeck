@@ -74,7 +74,7 @@ function defaultCreateSocket(url: string): SocketLike {
 }
 
 /**
- * Protocol client for ConDeck Remote.
+ * Protocol client for StreamKey Remote.
  *
  * It owns no React state and no DOM: the hook subscribes and re-renders, tests
  * inject a fake socket. Reconnection uses fresh credentials on every attempt,
@@ -253,7 +253,7 @@ export function createRemoteClient(options: RemoteClientOptions = {}): RemoteCli
       return;
     }
 
-    fatal('This phone is not paired yet. Create a pairing code in ConDeck Desktop → Devices.');
+    fatal('This phone is not paired yet. Create a pairing code in StreamKey Desktop → Devices.');
   }
 
   function handleFrame(raw: unknown): void {
@@ -405,7 +405,7 @@ export function createRemoteClient(options: RemoteClientOptions = {}): RemoteCli
       next = createSocket(buildWebSocketUrl(host, port));
     } catch {
       state = 'error';
-      error = 'ConDeck Remote could not open a connection to that address.';
+      error = 'StreamKey Remote could not open a connection to that address.';
       notify();
       return;
     }
@@ -442,7 +442,7 @@ export function createRemoteClient(options: RemoteClientOptions = {}): RemoteCli
 
     connectTimer = setTimeout(() => {
       if (socket === current && state === 'connecting') {
-        handleClose('The desktop did not answer. Check that ConDeck is running and on the same network.');
+        handleClose('The desktop did not answer. Check that StreamKey is running and on the same network.');
       }
     }, connectTimeoutMs);
   }

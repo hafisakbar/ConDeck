@@ -1,10 +1,11 @@
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Grid2x2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useEffect } from 'react';
 import { useT } from '../../i18n';
 import { cn } from '../../lib/cn';
 import { navigationItems, type ViewId } from '../../lib/navigation';
 import { useAppStore } from '../../stores/app-store';
+import { BrandLogo } from './BrandLogo';
 
 export interface NavigationDrawerProps {
   open: boolean;
@@ -66,10 +67,10 @@ export function NavigationDrawer({ open, view, onSelect, onClose }: NavigationDr
             <div className="flex items-start justify-between gap-3 px-5 pt-5 pb-4">
               <div className="flex items-center gap-2.5">
                 <span className="grid size-9 place-items-center rounded-[10px] bg-accent-soft text-accent">
-                  <Grid2x2 className="size-4" aria-hidden />
+                  <BrandLogo className="size-6" />
                 </span>
                 <div>
-                  <p className="text-sm font-semibold tracking-tight text-content">ConDeck</p>
+                  <p className="text-sm font-semibold tracking-tight text-content">StreamKey</p>
                   <p className="text-[11px] text-content-subtle">{t('app.tagline')}</p>
                 </div>
               </div>

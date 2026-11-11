@@ -94,7 +94,7 @@ export function RemoteScreen({
       <header className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold tracking-tight text-content">
-            {snapshot?.name ?? 'ConDeck Remote'}
+            {snapshot?.name ?? 'StreamKey Remote'}
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <ConnectionBadge state={state} />
@@ -121,7 +121,7 @@ export function RemoteScreen({
           <div className="flex h-full flex-col items-center justify-center gap-3 rounded-panel border border-dashed border-border-subtle p-6 text-center">
             <p className="text-sm font-medium text-content">No deck yet</p>
             <p className="max-w-[16rem] text-xs leading-relaxed text-content-subtle">
-              Create a deck in ConDeck Desktop. This screen updates as soon as the deck has pages and
+              Create a deck in StreamKey Desktop. This screen updates as soon as the deck has pages and
               buttons.
             </p>
             <button

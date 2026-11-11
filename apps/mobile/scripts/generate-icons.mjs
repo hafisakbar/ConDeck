@@ -1,4 +1,4 @@
-/* Generates the ConDeck Remote PWA icons without any image dependency.
+/* Legacy generator for the StreamKey Remote PWA icons without any image dependency.
  * Run with: node apps/mobile/scripts/generate-icons.mjs
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
