@@ -19,8 +19,8 @@ function useWordmarkTexture(): THREE.CanvasTexture {
       context.font = '600 62px "Segoe UI", Inter, system-ui, sans-serif';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.letterSpacing = '22px';
-      context.fillText('CONDECK', canvas.width / 2, canvas.height / 2);
+      context.letterSpacing = '18px';
+      context.fillText('STREAMKEY', canvas.width / 2, canvas.height / 2);
     }
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;

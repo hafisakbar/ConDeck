@@ -124,7 +124,7 @@ describe('mobile remote end to end', () => {
     const manifest = await fetch(`http://127.0.0.1:${port}/manifest.webmanifest`);
     expect(manifest.status).toBe(200);
     expect((await manifest.json()) as { name: string }).toMatchObject({
-      name: expect.stringContaining('ConDeck'),
+      name: expect.stringContaining('StreamKey'),
     });
   });
 

@@ -1,4 +1,4 @@
-# ConDeck — Release & Installation
+# StreamKey — Release & Installation
 
 Panduan ini mencakup cara membuat installer Windows, memasangnya, dan hal-hal yang perlu diperiksa sebelum sebuah build disebut siap rilis (Phase 6).
 
@@ -20,7 +20,7 @@ pnpm dist:win       # electron-builder: NSIS installer
 
 Hasilnya ada di `release/`:
 
-- `ConDeck-0.1.0-x64.exe` — installer NSIS (pilih folder instalasi, shortcut desktop + Start Menu).
+- `StreamKey-0.1.0-x64.exe` — installer NSIS (pilih folder instalasi, shortcut desktop + Start Menu).
 - `win-unpacked/` — versi portable tanpa installer untuk pemeriksaan cepat.
 
 Isi paket:
@@ -34,9 +34,9 @@ Untuk build tanpa installer (memeriksa isi paket): `pnpm --filter @condeck/deskt
 
 ## 3. Memasang
 
-1. Jalankan `ConDeck-0.1.0-x64.exe`.
+1. Jalankan `StreamKey-0.1.0-x64.exe`.
 2. Windows SmartScreen dapat menampilkan “Windows protected your PC” karena installer belum ditandatangani. Pilih **More info → Run anyway** hanya untuk build yang kamu buat sendiri.
-3. Pilih folder instalasi, lalu **Install**. ConDeck terbuka otomatis.
+3. Pilih folder instalasi, lalu **Install**. StreamKey terbuka otomatis.
 
 Instalasi tidak memerlukan hak administrator (`perMachine: false`).
 
@@ -44,19 +44,19 @@ Instalasi tidak memerlukan hak administrator (`perMachine: false`).
 
 - **Database:** dibuat otomatis di `%APPDATA%\condeck\condeck.db` saat aplikasi pertama kali dijalankan. Migrasi dijalankan otomatis dan idempoten, jadi upgrade versi tidak menghapus data.
 - **Log:** `%APPDATA%\condeck\logs\condeck.log`.
-- **Firewall:** saat server remote pertama kali dinyalakan, izinkan ConDeck pada jaringan **Private** agar HP bisa terhubung (port default 43821).
+- **Firewall:** saat server remote pertama kali dinyalakan, izinkan StreamKey pada jaringan **Private** agar HP bisa terhubung (port default 43821).
 - **Remote di HP:** buka **Devices**, nyalakan server remote, pindai QR. Alamat pertama yang ditampilkan adalah alamat Wi-Fi/Ethernet; alamat adapter virtual (VirtualBox/Hyper-V/VPN) ikut terdaftar tetapi tidak bisa dijangkau HP.
 - **OBS:** buka **Integrations**, isi host/port/password OBS WebSocket, lalu Connect. Password disimpan lewat Electron `safeStorage` (tidak plaintext).
 
 ## 5. Upgrade
 
-1. Tutup ConDeck.
+1. Tutup StreamKey.
 2. Jalankan installer versi baru (menimpa instalasi lama; data pengguna tidak disentuh).
-3. Buka ConDeck — migrasi database yang belum diterapkan dijalankan otomatis.
+3. Buka StreamKey — migrasi database yang belum diterapkan dijalankan otomatis.
 
 ## 6. Uninstall
 
-Windows Settings → Apps → ConDeck → Uninstall. Installer tidak menghapus `%APPDATA%\condeck` (`deleteAppDataOnUninstall: false`), sehingga deck dan perangkat yang sudah dipasangkan tetap ada bila ConDeck dipasang lagi. Hapus folder tersebut secara manual jika ingin benar-benar bersih.
+Windows Settings → Apps → StreamKey → Uninstall. Installer tidak menghapus `%APPDATA%\condeck` (`deleteAppDataOnUninstall: false`), sehingga deck dan perangkat yang sudah dipasangkan tetap ada bila StreamKey dipasang lagi. Hapus folder tersebut secara manual jika ingin benar-benar bersih.
 
 ## 7. Checklist rilis (Phase 6)
 
