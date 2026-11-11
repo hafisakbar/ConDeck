@@ -58,6 +58,8 @@ export const obsSnapshotSchema = z.object({
   scenes: z.array(z.string()),
   isStreaming: z.boolean(),
   isRecording: z.boolean(),
+  /** Per-input mute state reported by OBS; empty when disconnected. */
+  mutedInputs: z.record(z.string(), z.boolean()),
 });
 export type ObsSnapshot = z.infer<typeof obsSnapshotSchema>;
 

@@ -1,5 +1,14 @@
 import type { DeckDetail, DeckSummary } from '@condeck/shared';
-import { ChevronDown, LayoutTemplate, Minus, Pencil, Plus, Trash2, Maximize2 } from 'lucide-react';
+import {
+  ChevronDown,
+  LayoutTemplate,
+  Maximize2,
+  Minus,
+  Pencil,
+  Plus,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '../../lib/cn';
 import type { WorkspaceMode } from '../../lib/device-preferences';
@@ -24,6 +33,7 @@ export interface DeviceToolbarProps {
   onOpenLayout: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
+  onResetView: () => void;
   onFit: () => void;
 }
 
@@ -47,6 +57,7 @@ export function DeviceToolbar({
   onOpenLayout,
   onZoomIn,
   onZoomOut,
+  onResetView,
   onFit,
 }: DeviceToolbarProps) {
   const [deckMenuOpen, setDeckMenuOpen] = useState(false);
@@ -256,10 +267,19 @@ export function DeviceToolbar({
         </button>
         <button
           type="button"
+          onClick={onResetView}
+          aria-label="Reset view"
+          title="Reset view"
+          className="ml-0.5 grid size-6 place-items-center rounded-lg text-content-subtle transition-colors hover:bg-surface-hover hover:text-content"
+        >
+          <RotateCcw className="size-3" aria-hidden />
+        </button>
+        <button
+          type="button"
           onClick={onFit}
           aria-label="Fit to screen"
           title="Fit to screen"
-          className="ml-0.5 grid size-6 place-items-center rounded-lg text-content-subtle transition-colors hover:bg-surface-hover hover:text-content"
+          className="grid size-6 place-items-center rounded-lg text-content-subtle transition-colors hover:bg-surface-hover hover:text-content"
         >
           <Maximize2 className="size-3" aria-hidden />
         </button>

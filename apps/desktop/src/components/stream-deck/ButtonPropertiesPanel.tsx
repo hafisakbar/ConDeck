@@ -1,6 +1,7 @@
 import type {
   ActionCatalogEntry,
   ActionType,
+  ButtonAppearance,
   DeckButtonWithAction,
 } from '@condeck/shared';
 import { motion, useReducedMotion } from 'framer-motion';
@@ -22,6 +23,7 @@ export interface ButtonPropertiesPanelProps {
   onClose: () => void;
   onCreate: (position: number) => void;
   onSave: (patch: ButtonPatch) => void;
+  onPreviewAppearance: (appearance: ButtonAppearance | null) => void;
   onDuplicate: (position: number) => void;
   onDelete: () => void;
   onSaveAction: (buttonId: string, actionType: ActionType, config: Record<string, unknown>) => void;
@@ -45,6 +47,7 @@ export function ButtonPropertiesPanel({
   onClose,
   onCreate,
   onSave,
+  onPreviewAppearance,
   onDuplicate,
   onDelete,
   onSaveAction,
@@ -91,6 +94,7 @@ export function ButtonPropertiesPanel({
           execution={execution}
           onClose={onClose}
           onSave={onSave}
+          onPreviewAppearance={onPreviewAppearance}
           onDuplicate={onDuplicate}
           onDelete={onDelete}
           onSaveAction={onSaveAction}

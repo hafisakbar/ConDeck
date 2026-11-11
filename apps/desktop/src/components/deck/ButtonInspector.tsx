@@ -1,12 +1,15 @@
-import type {
-  ActionCatalogEntry,
-  ActionType,
-  ButtonIconName,
-  DeckButtonWithAction,
+import {
+  defaultButtonAppearance,
+  type ActionCatalogEntry,
+  type ActionType,
+  type ButtonAppearance,
+  type ButtonIconName,
+  type DeckButtonWithAction,
 } from '@condeck/shared';
 import { Copy, Trash2, X } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { ExecutionState } from '../../stores/deck-store';
+import { AppearanceEditor } from '../stream-deck/AppearanceEditor';
 import { ActionEditor } from './ActionEditor';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -22,6 +25,7 @@ export interface ButtonPatch {
   icon?: ButtonIconName | null;
   backgroundColor?: string;
   textColor?: string;
+  appearance?: ButtonAppearance;
   isEnabled?: boolean;
   position?: number;
 }
@@ -36,6 +40,7 @@ export interface ButtonInspectorProps {
   execution: ExecutionState | undefined;
   onClose: () => void;
   onSave: (patch: ButtonPatch) => void;
+  onPreviewAppearance?: (appearance: ButtonAppearance | null) => void;
   onDuplicate: (position: number) => void;
   onDelete: () => void;
   onSaveAction: (buttonId: string, actionType: ActionType, config: Record<string, unknown>) => void;
@@ -53,6 +58,7 @@ export function ButtonInspector({
   execution,
   onClose,
   onSave,
+  onPreviewAppearance,
   onDuplicate,
   onDelete,
   onSaveAction,
@@ -63,6 +69,9 @@ export function ButtonInspector({
   const [icon, setIcon] = useState<ButtonIconName | null>(button.icon);
   const [backgroundColor, setBackgroundColor] = useState(button.backgroundColor);
   const [textColor, setTextColor] = useState(button.textColor);
+  const [appearance, setAppearance] = useState<ButtonAppearance>(
+    button.appearance ?? defaultButtonAppearance(button.backgroundColor, button.textColor),
+  );
   const [isEnabled, setIsEnabled] = useState(button.isEnabled);
   const [position, setPosition] = useState(button.position);
   const [error, setError] = useState<string | null>(null);
@@ -72,10 +81,16 @@ export function ButtonInspector({
     setIcon(button.icon);
     setBackgroundColor(button.backgroundColor);
     setTextColor(button.textColor);
+    setAppearance(button.appearance ?? defaultButtonAppearance(button.backgroundColor, button.textColor));
     setIsEnabled(button.isEnabled);
     setPosition(button.position);
     setError(null);
   }, [button]);
+
+  // A preview belongs to this open panel only; closing or switching button drops it.
+  const previewRef = useRef(onPreviewAppearance);
+  previewRef.current = onPreviewAppearance;
+  useEffect(() => () => previewRef.current?.(null), [button.id]);
 
   const capacity = columns * rows;
   const occupied = useMemo(
@@ -83,11 +98,16 @@ export function ButtonInspector({
     [pageButtons, button.id],
   );
 
+  const defaultAppearance = defaultButtonAppearance(button.backgroundColor, button.textColor);
+  const appearanceDirty =
+    JSON.stringify(appearance) !== JSON.stringify(button.appearance ?? defaultAppearance);
+
   const dirty =
     label.trim() !== button.label ||
     icon !== button.icon ||
     backgroundColor !== button.backgroundColor ||
     textColor !== button.textColor ||
+    appearanceDirty ||
     isEnabled !== button.isEnabled ||
     position !== button.position;
 
@@ -109,6 +129,7 @@ export function ButtonInspector({
       icon,
       backgroundColor,
       textColor,
+      appearance,
       isEnabled,
       position,
     });
@@ -152,6 +173,19 @@ export function ButtonInspector({
 
         <ColorField label="Background" value={backgroundColor} onChange={setBackgroundColor} />
         <ColorField label="Text colour" value={textColor} onChange={setTextColor} />
+
+        <AppearanceEditor
+          appearance={appearance}
+          defaultAppearance={defaultAppearance}
+          onChange={(next) => {
+            setAppearance(next);
+            onPreviewAppearance?.(next);
+          }}
+          onReset={() => {
+            setAppearance(defaultAppearance);
+            onPreviewAppearance?.(defaultAppearance);
+          }}
+        />
 
         <Select
           label="Move to slot"

@@ -205,6 +205,14 @@ Batas data dijaga: `decks.columns`/`decks.rows` tetap satu-satunya sumber ukuran
 
 Konsekuensi lain: bundle renderer bertambah satu chunk three.js (>500 kB) yang hanya diunduh saat halaman My Deck dibuka, sehingga peringatan `chunkSizeWarningLimit` Vite tetap muncul.
 
+### ADR-034 — Appearance per tombol sebagai JSON tervalidasi, status aktif dari snapshot OBS
+
+Palette empat state (normal/hover/active/pressed) disimpan sebagai satu kolom `buttons.appearance_json` (nullable) lewat migrasi `0001_button_appearance`, bukan 16 kolom terpisah. Alasannya: palette selalu dibaca dan ditulis utuh, bentuknya divalidasi Zod di `packages/shared` dan sekali lagi di repository, dan penambahan state di masa depan tidak memerlukan migrasi baru. Data lama tidak diubah: `appearance` null berarti renderer menurunkan default dari `background_color`/`text_color`, jadi tidak ada reset atau backfill.
+
+Status aktif tidak disimpan dan tidak ditebak dari hasil klik. Renderer menurunkannya dari snapshot OBS yang sudah ada (streaming, recording, scene aktif, dan `mutedInputs` yang kini ikut dikirim ke renderer). Tombol yang aksinya gagal, tidak punya state persisten (navigasi/system), atau saat OBS terputus selalu kembali ke tampilan normal.
+
+Pratinjau warna memakai draft di store (`appearanceDraft`) yang dibaca renderer 3D; draft dibuang saat panel ditutup dan baru ditulis ke database ketika **Save changes** ditekan. Kamera memakai OrbitControls dengan batas azimuth ±0,95 rad, polar 0,30–1,34 rad, dan zoom 55–160% dari jarak fit, sehingga rotasi tidak bisa melempar perangkat keluar layar.
+
 ---
 
 ## 3. Utang teknis yang diketahui (dicatat, bukan disembunyikan)
@@ -223,3 +231,5 @@ Konsekuensi lain: bundle renderer bertambah satu chunk three.js (>500 kB) yang h
 12. Performance testing masih terbatas pada pengukuran tidak formal: belum ada benchmark berkelanjutan untuk snapshot deck besar atau latensi remote di bawah beban.
 13. Deck 3D baru diverifikasi lewat harness Chromium (screenshot `docs/screenshots`) dan unit test geometri grid, belum dijalankan di dalam Electron pada Windows. Render WebGL di GPU nyata, perilaku `safeStorage`, dan drag/zoom dengan trackpad masih perlu dicek manual.
 14. Screenshot di `docs/screenshots` dihasilkan `scripts/preview/capture.mjs` dengan bridge tiruan; angkanya bukan bukti integrasi database/OBS.
+15. Status mute hanya akurat untuk input yang pernah dilaporkan OBS lewat event `InputMuteStateChanged` atau dibaca setelah aksi mute; input yang belum pernah disentuh sebelum ConDeck terhubung tampil normal sampai statusnya diketahui.
+16. Rotasi/zoom 3D baru diuji di Chromium headless (SwiftShader) lewat harness, belum di Electron/Windows dengan GPU nyata; belum ada pengukuran FPS pada laptop kelas menengah.

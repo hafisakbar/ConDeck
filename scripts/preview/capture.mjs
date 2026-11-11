@@ -104,6 +104,31 @@ if (box) {
   }
   await page.waitForTimeout(400);
   await page.screenshot({ path: join(output, 'properties.png'), timeout: 90_000 });
+
+  // Orbit the device with a drag, then capture the rotated view.
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.62);
+  await page.mouse.down();
+  for (let step = 1; step <= 12; step += 1) {
+    await page.mouse.move(
+      box.x + box.width * 0.5 + step * 16,
+      box.y + box.height * 0.62 - step * 2,
+    );
+    await page.waitForTimeout(16);
+  }
+  await page.mouse.up();
+  await page.waitForTimeout(900);
+  console.log('step: orbit');
+  await page.screenshot({ path: join(output, 'orbit.png'), timeout: 90_000 });
+
+  const activeTab = page.getByRole('tab', { name: 'Active' });
+  if ((await activeTab.count()) > 0) {
+    await activeTab.scrollIntoViewIfNeeded();
+    await activeTab.click();
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: join(output, 'appearance.png'), timeout: 90_000 });
+    console.log('step: appearance');
+  }
+
   console.log(
     'dialog count',
     await page.getByRole('dialog').count(),

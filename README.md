@@ -26,6 +26,10 @@ ConDeck memindahkan kontrol OBS Studio ke layar yang benar-benar bisa kamu sentu
 
 Landing page ConDeck adalah perangkat stream deck 3D yang bisa diputar, diperbesar, dan ditekan langsung. Tidak ada sidebar permanen: navigasi dibuka lewat tombol menu di kiri atas, sehingga panggung deck memakai seluruh jendela.
 
+- **Bisa diputar seperti perangkat sungguhan.** Drag untuk memutar (kiri/kanan dan atas/bawah), scroll untuk zoom, dengan batas sudut dan jarak supaya perangkat tidak pernah hilang dari layar. Tombol **Reset view** mengembalikan sudut awal, **Fit** membingkai seluruh perangkat. Gestur sentuh ikut bekerja lewat OrbitControls.
+- **Tombol berperilaku fisik.** Keycap turun saat ditekan lalu naik kembali dengan easing, dan punya tampilan berbeda untuk normal, hover, selected, pressed, active, serta disabled.
+- **Warna RGB per tombol.** Setiap tombol menyimpan palette **Normal/Hover/Active/Pressed** sendiri: warna latar, teks/ikon, garis tepi, warna glow, dan intensitas glow. Panel properti punya color picker + input HEX, pratinjau langsung di perangkat 3D, dan reset per state. Perubahan disimpan ke database dan tetap ada setelah aplikasi dibuka lagi, terpisah untuk setiap profil.
+- **Active mengikuti OBS, bukan klik terakhir.** Tombol streaming/recording menyala hanya ketika OBS benar-benar streaming/recording, tombol scene menyala saat scene itu aktif, dan tombol mute menyala sesuai status mute input di OBS. Saat OBS terputus, semua status aktif padam.
 - **Dua mode yang jelas.** `Edit` untuk memilih dan mengonfigurasi tombol; `Live` untuk menjalankan action. Panel properti otomatis tertutup saat masuk Live.
 - **Klik untuk mengonfigurasi.** Klik keycap (atau slot kosong) untuk membuka panel properti mengambang berisi label, ikon, warna, posisi, dan action. Tidak ada panel yang selalu memakan ruang.
 - **Grid fleksibel.** Baris/kolom (1–8) disimpan di database bersama deck. Ukuran tombol, jarak, dan zoom disimpan sebagai preferensi lokal, plus tombol **Fit**. Mengecilkan grid yang masih berisi tombol meminta konfirmasi karena slot tersebut akan dihapus.
@@ -34,6 +38,10 @@ Landing page ConDeck adalah perangkat stream deck 3D yang bisa diputar, diperbes
 Tombol menu membuka drawer berisi seluruh halaman lama — Dashboard, My Deck, Profiles, Integrations, Remote Devices, Activity Logs, Settings — jadi tidak ada fitur yang hilang.
 
 ![Navigasi drawer](docs/screenshots/menu.png)
+
+![Perangkat diputar dan panel appearance](docs/screenshots/orbit.png)
+
+Perubahan warna disimpan di kolom `buttons.appearance_json` (migrasi `0001_button_appearance`). Data lama tetap valid: tombol tanpa palette memakai warna latar/teks lamanya sebagai default, jadi tidak ada reset database.
 
 ## Arsitektur
 
@@ -166,7 +174,7 @@ Menambah perubahan schema: ubah `schema.ts` → `pnpm db:generate` → daftarkan
 
 | Lapisan            | Cakupan                                                                                                              |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Unit + integration | 230 test / 23 file — repository & migrasi database, action registry, klien OBS, remote server, protokol, UI mobile, geometri grid 3D. |
+| Unit + integration | 238 test / 24 file — repository & migrasi database, action registry, klien OBS, remote server, protokol, UI mobile, geometri grid 3D, dan status aktif tombol. |
 | E2E                | Playwright (Chromium) menjalankan **PWA hasil build** ke server remote + SQLite sungguhan: CSP/aset, pairing QR, render deck, tekan tombol sampai feedback sukses, pairing code salah. |
 | Keamanan           | Preload hanya mengekspos `condeck`; seluruh channel yang dipakai ada di allowlist IPC.                               |
 | CI                 | Setiap PR & push ke `main`: typecheck → lint → unit/integration → build → E2E.                                       |

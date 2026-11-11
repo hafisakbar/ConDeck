@@ -1,5 +1,6 @@
-import type { DeckButtonWithAction } from '@condeck/shared';
+import { defaultButtonAppearance, type DeckButtonWithAction, type ObsSnapshot } from '@condeck/shared';
 import { Plus } from 'lucide-react';
+import { isButtonActive } from '../../lib/button-status';
 import { resolveButtonIcon } from '../../lib/button-icons';
 import { cn } from '../../lib/cn';
 import type { ExecutionState } from '../../stores/deck-store';
@@ -10,6 +11,7 @@ export interface StreamDeckFallbackProps {
   buttons: DeckButtonWithAction[];
   selectedButtonId: string | null;
   executions: Record<string, ExecutionState>;
+  obs: ObsSnapshot | null;
   onSelect: (position: number, buttonId: string | null) => void;
   onActivate: (buttonId: string) => void;
 }
@@ -24,6 +26,7 @@ export function StreamDeckFallback({
   buttons,
   selectedButtonId,
   executions,
+  obs,
   onSelect,
   onActivate,
 }: StreamDeckFallbackProps) {
@@ -42,6 +45,11 @@ export function StreamDeckFallback({
             const Icon = button ? resolveButtonIcon(button.icon) : null;
             const execution = button ? executions[button.id] : undefined;
             const selected = button !== null && button.id === selectedButtonId;
+            const palette = button
+              ? ((button.appearance ?? defaultButtonAppearance(button.backgroundColor, button.textColor))[
+                  button !== null && isButtonActive(button, obs) ? 'active' : 'normal'
+                ])
+              : null;
             return (
               <button
                 key={button?.id ?? `empty-${position}`}
@@ -62,8 +70,14 @@ export function StreamDeckFallback({
                   selected ? 'border-accent ring-2 ring-accent/50' : 'border-white/10 hover:border-white/25',
                 )}
                 style={
-                  button
-                    ? { backgroundColor: button.backgroundColor, color: button.textColor, opacity: button.isEnabled ? 1 : 0.5 }
+                  button && palette
+                    ? {
+                        backgroundColor: palette.backgroundColor,
+                        color: palette.textColor,
+                        borderColor: palette.borderColor,
+                        boxShadow: `0 0 ${Math.round(palette.glowIntensity * 18)}px ${palette.glowColor}`,
+                        opacity: button.isEnabled ? 1 : 0.5,
+                      }
                     : undefined
                 }
               >

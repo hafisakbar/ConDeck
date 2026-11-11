@@ -91,6 +91,7 @@ describe('button validation', () => {
       icon: null,
       backgroundColor: '#1b2030',
       textColor: '#e8ebf2',
+      appearance: null,
       isEnabled: false,
       createdAt: '2026-01-01T10:00:00.000Z',
       updatedAt: '2026-01-01T10:00:00.000Z',

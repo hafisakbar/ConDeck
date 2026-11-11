@@ -96,6 +96,8 @@ export const buttons = sqliteTable(
     imageAssetId: text('image_asset_id').references(() => mediaAssets.id, { onDelete: 'set null' }),
     backgroundColor: text('background_color').notNull(),
     textColor: text('text_color').notNull(),
+    /** JSON of the per-state colours/glow (ButtonAppearance); null derives defaults. */
+    appearanceJson: text('appearance_json'),
     isEnabled: integer('is_enabled', { mode: 'boolean' }).notNull().default(true),
     createdAt,
     updatedAt,
