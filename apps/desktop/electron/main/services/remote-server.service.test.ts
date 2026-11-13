@@ -16,9 +16,11 @@ import {
 } from '@condeck/database';
 import {
   AppError,
+  emptyTikTokSnapshot,
   remoteDefaultPort,
   type ActionExecutionResult,
   type ObsSnapshot,
+  type TikTokSnapshot,
 } from '@condeck/shared';
 import {
   createClientMessage,
@@ -149,6 +151,7 @@ let server: RemoteServer | null = null;
 let port = 0;
 let executeAction: ReturnType<typeof vi.fn>;
 let obsSnapshot: ObsSnapshot | null;
+let tiktokSnapshot: TikTokSnapshot | null;
 let deckId = '';
 let pageId = '';
 let buttonId = '';
@@ -204,6 +207,7 @@ beforeEach(async () => {
     executeAction: executeAction as unknown as (buttonId: string) => Promise<ActionExecutionResult>,
     getActiveDeck: () => getDeckDetail(database.db, deckId),
     getObsSnapshot: () => obsSnapshot,
+    getTikTokSnapshot: () => tiktokSnapshot,
     port: 0,
     host: '127.0.0.1',
     now: () => clock,
@@ -575,6 +579,33 @@ describe('remote control', () => {
       recording: false,
       sceneName: 'Main',
     });
+  });
+
+  it('broadcasts TikTok status without ports or versions', async () => {
+    const { client } = await pairClient();
+    const initial = await waitForType(client, 'tiktok.status');
+    expect(initial.payload.connected).toBe(false);
+
+    tiktokSnapshot = {
+      ...emptyTikTokSnapshot(true),
+      state: 'CONNECTED',
+      sceneName: 'Main',
+      micMuted: true,
+      recording: true,
+      port: 41000,
+    };
+    server?.broadcastTikTokStatus();
+
+    const status = await waitForType(client, 'tiktok.status');
+    expect(status.payload).toEqual({
+      connected: true,
+      sceneName: 'Main',
+      micMuted: true,
+      audioMuted: false,
+      recording: true,
+      streamStatus: 0,
+    });
+    expect(JSON.stringify(status.payload)).not.toContain('41000');
   });
 
   it('closes the socket on an oversized message', async () => {

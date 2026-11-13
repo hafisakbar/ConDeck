@@ -16,6 +16,7 @@ import {
   type ActionExecutionResult,
   type DeckDetail,
   type ObsSnapshot,
+  type TikTokSnapshot,
   type RemotePairing,
   type RemoteServerStatus,
 } from '@condeck/shared';
@@ -35,7 +36,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { createDeviceCredential, verifyCredential } from './remote/credentials';
 import { listLanAddresses } from './remote/lan-addresses';
 import { createPairingManager } from './remote/pairing';
-import { toObsStatusPayload, toRemoteDeckSnapshot } from './remote/snapshot';
+import { toObsStatusPayload, toRemoteDeckSnapshot, toTikTokStatusPayload } from './remote/snapshot';
 import {
   applyMobileHeaders,
   sendMobileNotBuiltPage,
@@ -62,6 +63,7 @@ export interface RemoteServerOptions {
   /** Deck shown on the remote: the active profile's deck, or null when none exists. */
   getActiveDeck: () => DeckDetail | null;
   getObsSnapshot: () => ObsSnapshot | null;
+  getTikTokSnapshot?: () => TikTokSnapshot | null;
   logger?: RemoteServerLogger;
   /** Directory holding the built mobile app; null keeps only the API online. */
   mobileAssetsDir?: string | null;
@@ -88,6 +90,8 @@ export interface RemoteServer {
   notifyDeckChanged(): void;
   /** Pushes the current OBS state to every authorised remote. */
   broadcastObsStatus(): void;
+  /** Pushes the current TikTok LIVE Studio state to every authorised remote. */
+  broadcastTikTokStatus(): void;
 }
 
 interface ClientState {
@@ -206,10 +210,28 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
     send(client, createServerMessage('obs.status', toObsStatusPayload(options.getObsSnapshot())));
   }
 
+  function sendTikTokStatus(client: ClientState): void {
+    send(
+      client,
+      createServerMessage(
+        'tiktok.status',
+        toTikTokStatusPayload(options.getTikTokSnapshot?.() ?? null),
+      ),
+    );
+  }
+
   function sendObsStatusToAll(): void {
     for (const client of clients) {
       if (client.deviceId !== null) {
         sendObsStatus(client);
+      }
+    }
+  }
+
+  function sendTikTokStatusToAll(): void {
+    for (const client of clients) {
+      if (client.deviceId !== null) {
+        sendTikTokStatus(client);
       }
     }
   }
@@ -226,6 +248,7 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
 
     sendDeck(client);
     sendObsStatus(client);
+    sendTikTokStatus(client);
     emitStatus();
   }
 
@@ -833,5 +856,6 @@ export function createRemoteServer(options: RemoteServerOptions): RemoteServer {
     disconnectDevice,
     notifyDeckChanged,
     broadcastObsStatus: sendObsStatusToAll,
+    broadcastTikTokStatus: sendTikTokStatusToAll,
   };
 }

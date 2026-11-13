@@ -7,6 +7,7 @@ import {
 import { Plus } from 'lucide-react';
 import { useEffect } from 'react';
 import { isButtonActive } from '../../lib/button-status';
+import { useTikTokStore } from '../../stores/tiktok-store';
 import { resolveButtonIcon } from '../../lib/button-icons';
 import { cn } from '../../lib/cn';
 import type { ExecutionState } from '../../stores/deck-store';
@@ -37,6 +38,7 @@ export function StreamDeckFallback({
   onSelect,
   onActivate,
 }: StreamDeckFallbackProps) {
+  const tiktokSnapshot = useTikTokStore((state) => state.snapshot);
   const sources = useIconStore((state) => state.sources);
   const status = useIconStore((state) => state.status);
   const load = useIconStore((state) => state.load);
@@ -66,7 +68,7 @@ export function StreamDeckFallback({
             const selected = button !== null && button.id === selectedButtonId;
             const palette = button
               ? ((button.appearance ?? defaultButtonAppearance(button.backgroundColor, button.textColor))[
-                  button !== null && isButtonActive(button, obs) ? 'active' : 'normal'
+                  button !== null && isButtonActive(button, obs, tiktokSnapshot) ? 'active' : 'normal'
                 ])
               : null;
             return (

@@ -1,4 +1,8 @@
-import type { ObsStatusPayload, RemoteDeckSnapshot } from '@condeck/websocket-protocol';
+import type {
+  ObsStatusPayload,
+  RemoteDeckSnapshot,
+  TikTokStatusPayload,
+} from '@condeck/websocket-protocol';
 import { useEffect, useMemo, useState } from 'react';
 import type { ActionFeedback, RemoteConnectionState } from '../lib/remote-client';
 import { ConnectionBadge } from './ConnectionBadge';
@@ -9,6 +13,7 @@ import { RemoteButtonGrid } from './RemoteButtonGrid';
 export interface RemoteScreenProps {
   snapshot: RemoteDeckSnapshot | null;
   obs: ObsStatusPayload | null;
+  tiktok: TikTokStatusPayload | null;
   state: RemoteConnectionState;
   feedback: ActionFeedback | null;
   onPress: (buttonId: string) => void;
@@ -47,9 +52,32 @@ function ObsChip({ obs }: { obs: ObsStatusPayload | null }) {
   );
 }
 
+function TikTokChip({ tiktok }: { tiktok: TikTokStatusPayload | null }) {
+  if (tiktok === null || !tiktok.connected) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-2 py-1 text-[11px] font-medium text-content-subtle">
+        <span aria-hidden className="size-1.5 rounded-full bg-content-subtle" />
+        TikTok off
+      </span>
+    );
+  }
+
+  const label = tiktok.recording ? 'Rec' : 'TikTok';
+  return (
+    <span className="inline-flex max-w-[9rem] items-center gap-1.5 rounded-full border border-border-subtle bg-surface px-2 py-1 text-[11px] font-medium text-content-muted">
+      <span aria-hidden className={`size-1.5 shrink-0 rounded-full ${tiktok.micMuted ? 'bg-warning' : 'bg-success'}`} />
+      <span className="truncate">
+        {label}
+        {tiktok.sceneName ? ` · ${tiktok.sceneName}` : ''}
+      </span>
+    </span>
+  );
+}
+
 export function RemoteScreen({
   snapshot,
   obs,
+  tiktok,
   state,
   feedback,
   onPress,
@@ -99,6 +127,7 @@ export function RemoteScreen({
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <ConnectionBadge state={state} />
             <ObsChip obs={obs} />
+            <TikTokChip tiktok={tiktok} />
           </div>
         </div>
         <button

@@ -10,6 +10,9 @@ export default defineConfig({
       '@condeck/database': fromRoot('./packages/database/src/index.ts'),
       '@condeck/action-engine': fromRoot('./packages/action-engine/src/index.ts'),
       '@condeck/obs-integration': fromRoot('./packages/obs-integration/src/index.ts'),
+      '@condeck/tiktok-live-studio-integration': fromRoot(
+        './packages/tiktok-live-studio-integration/src/index.ts',
+      ),
       '@condeck/websocket-protocol': fromRoot('./packages/websocket-protocol/src/index.ts'),
     },
   },

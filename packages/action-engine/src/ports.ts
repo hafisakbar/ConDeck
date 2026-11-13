@@ -1,4 +1,4 @@
-import type { NavigationDirection } from '@condeck/shared';
+import type { NavigationDirection, TikTokState } from '@condeck/shared';
 
 /**
  * Everything an action handler may know about the button that triggered it.
@@ -50,8 +50,24 @@ export interface SoundboardPort {
   play(soundId: string, mode: 'restart' | 'ignore'): Promise<string>;
 }
 
+/**
+ * TikTok LIVE Studio operations. Every setter reads the live state first and
+ * verifies the resulting state after the documented toggle, so a button never
+ * reports success just because a command was emitted.
+ */
+export interface TikTokPort {
+  isConnected(): boolean;
+  getState(): TikTokState | null;
+  switchScene(sceneName: string): Promise<TikTokState>;
+  setSourceVisible(sceneName: string, sourceId: string, visible: boolean): Promise<TikTokState>;
+  setMicMuted(muted: boolean): Promise<TikTokState>;
+  setAudioMuted(muted: boolean): Promise<TikTokState>;
+  setRecording(recording: boolean): Promise<TikTokState>;
+}
+
 export interface ActionPorts {
   obs: ObsPort;
+  tiktok: TikTokPort;
   system: SystemPort;
   navigation: NavigationPort;
   soundboard: SoundboardPort;

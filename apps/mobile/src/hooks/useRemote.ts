@@ -22,6 +22,7 @@ export interface RemoteHook {
   error: string | null;
   snapshot: ReturnType<RemoteClient['getSnapshot']>;
   obs: ReturnType<RemoteClient['getObs']>;
+  tiktok: ReturnType<RemoteClient['getTikTok']>;
   feedback: ActionFeedback | null;
   stored: StoredDevice | null;
   /** Token from the QR link, if the page was opened by scanning. */
@@ -124,6 +125,7 @@ export function useRemote(): RemoteHook {
     error: client.getError(),
     snapshot: client.getSnapshot(),
     obs: client.getObs(),
+    tiktok: client.getTikTok(),
     feedback: client.getFeedback(),
     stored: storedRef.current,
     pairToken,

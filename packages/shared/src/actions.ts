@@ -22,6 +22,16 @@ export const actionTypes = [
   'OBS_STOP_RECORDING',
   'OBS_TOGGLE_MUTE',
   'OBS_SET_MUTE',
+  'TIKTOK_SWITCH_SCENE',
+  'TIKTOK_SET_SOURCE_VISIBILITY',
+  'TIKTOK_TOGGLE_SOURCE',
+  'TIKTOK_SET_MIC_MUTED',
+  'TIKTOK_TOGGLE_MIC',
+  'TIKTOK_SET_AUDIO_MUTED',
+  'TIKTOK_TOGGLE_AUDIO',
+  'TIKTOK_START_RECORDING',
+  'TIKTOK_STOP_RECORDING',
+  'TIKTOK_GET_STATUS',
   'SYSTEM_OPEN_APP',
   'SYSTEM_OPEN_URL',
   'SOUNDBOARD_PLAY',
@@ -32,7 +42,7 @@ export const actionTypes = [
 export const actionTypeSchema = z.enum(actionTypes);
 export type ActionType = z.infer<typeof actionTypeSchema>;
 
-export const actionCategories = ['OBS', 'SYSTEM', 'SOUNDBOARD', 'NAVIGATION'] as const;
+export const actionCategories = ['OBS', 'TIKTOK', 'SYSTEM', 'SOUNDBOARD', 'NAVIGATION'] as const;
 export const actionCategorySchema = z.enum(actionCategories);
 export type ActionCategory = z.infer<typeof actionCategorySchema>;
 
@@ -90,6 +100,23 @@ export const actionConfigSchemas = {
   OBS_STOP_RECORDING: noConfigSchema,
   OBS_TOGGLE_MUTE: z.strictObject({ inputName: audioInputSchema }),
   OBS_SET_MUTE: z.strictObject({ inputName: audioInputSchema, muted: z.boolean() }),
+  TIKTOK_SWITCH_SCENE: z.strictObject({ sceneName: sceneNameSchema }),
+  TIKTOK_SET_SOURCE_VISIBILITY: z.strictObject({
+    sceneName: sceneNameSchema,
+    sourceId: z.string().trim().min(1, 'Choose a source.').max(200),
+    visible: z.boolean(),
+  }),
+  TIKTOK_TOGGLE_SOURCE: z.strictObject({
+    sceneName: sceneNameSchema,
+    sourceId: z.string().trim().min(1, 'Choose a source.').max(200),
+  }),
+  TIKTOK_SET_MIC_MUTED: z.strictObject({ muted: z.boolean() }),
+  TIKTOK_TOGGLE_MIC: noConfigSchema,
+  TIKTOK_SET_AUDIO_MUTED: z.strictObject({ muted: z.boolean() }),
+  TIKTOK_TOGGLE_AUDIO: noConfigSchema,
+  TIKTOK_START_RECORDING: noConfigSchema,
+  TIKTOK_STOP_RECORDING: noConfigSchema,
+  TIKTOK_GET_STATUS: noConfigSchema,
   SYSTEM_OPEN_APP: z.strictObject({ applicationPath: applicationPathSchema }),
   SYSTEM_OPEN_URL: z.strictObject({ url: urlSchema }),
   SOUNDBOARD_PLAY: z.strictObject({
@@ -110,6 +137,8 @@ export interface ActionConfigField {
   help?: string;
 }
 
+export type ActionProvider = 'OBS' | 'TIKTOK' | 'NONE';
+
 export interface ActionCatalogEntry {
   type: ActionType;
   category: ActionCategory;
@@ -117,6 +146,8 @@ export interface ActionCatalogEntry {
   description: string;
   /** OBS actions need a live OBS WebSocket connection to run. */
   requiresObs: boolean;
+  /** Which local application the action talks to. */
+  provider: ActionProvider;
   fields: ActionConfigField[];
 }
 
@@ -131,6 +162,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Switch scene',
     description: 'Switch OBS to an existing scene by name.',
     requiresObs: true,
+    provider: 'OBS',
     fields: [
       {
         key: 'sceneName',
@@ -147,6 +179,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Start streaming',
     description: 'Start the OBS stream.',
     requiresObs: true,
+    provider: 'OBS',
     fields: [],
   },
   {
@@ -155,6 +188,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Stop streaming',
     description: 'Stop the OBS stream.',
     requiresObs: true,
+    provider: 'OBS',
     fields: [],
   },
   {
@@ -163,6 +197,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Start recording',
     description: 'Start recording in OBS.',
     requiresObs: true,
+    provider: 'OBS',
     fields: [],
   },
   {
@@ -171,6 +206,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Stop recording',
     description: 'Stop the OBS recording.',
     requiresObs: true,
+    provider: 'OBS',
     fields: [],
   },
   {
@@ -179,6 +215,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Toggle audio mute',
     description: 'Mute the input if it is unmuted, unmute it if it is muted.',
     requiresObs: true,
+    provider: 'OBS',
     fields: [
       {
         key: 'inputName',
@@ -195,6 +232,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Set audio mute',
     description: 'Force an audio input to muted or unmuted.',
     requiresObs: true,
+    provider: 'OBS',
     fields: [
       {
         key: 'inputName',
@@ -212,6 +250,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Open application',
     description: 'Launch a local application with its default handler.',
     requiresObs: false,
+    provider: 'NONE',
     fields: [
       {
         key: 'applicationPath',
@@ -228,6 +267,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Open URL',
     description: 'Open an http or https address in the default browser.',
     requiresObs: false,
+    provider: 'NONE',
     fields: [
       {
         key: 'url',
@@ -243,6 +283,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Play sound',
     description: 'Play an audio file from the sound library through the default output device.',
     requiresObs: false,
+    provider: 'NONE',
     fields: [
       {
         key: 'soundId',
@@ -253,11 +294,117 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     ],
   },
   {
+    type: 'TIKTOK_SWITCH_SCENE',
+    category: 'TIKTOK',
+    label: 'Switch scene',
+    description: 'Switch TikTok LIVE Studio to an existing scene.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [
+      {
+        key: 'sceneName',
+        label: 'Scene',
+        type: 'text',
+        placeholder: 'Main',
+        help: 'Scenes are read from LIVE Studio while it is connected.',
+      },
+    ],
+  },
+  {
+    type: 'TIKTOK_SET_SOURCE_VISIBILITY',
+    category: 'TIKTOK',
+    label: 'Show or hide source',
+    description: 'Make a scene source visible or hidden.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [
+      { key: 'sceneName', label: 'Scene', type: 'text', help: 'The scene that owns the source.' },
+      { key: 'sourceId', label: 'Source', type: 'text', help: 'Choose a source from that scene.' },
+      { key: 'visible', label: 'Visible', type: 'boolean' },
+    ],
+  },
+  {
+    type: 'TIKTOK_TOGGLE_SOURCE',
+    category: 'TIKTOK',
+    label: 'Toggle source',
+    description: 'Show the source if it is hidden, hide it if it is visible.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [
+      { key: 'sceneName', label: 'Scene', type: 'text', help: 'The scene that owns the source.' },
+      { key: 'sourceId', label: 'Source', type: 'text', help: 'Choose a source from that scene.' },
+    ],
+  },
+  {
+    type: 'TIKTOK_SET_MIC_MUTED',
+    category: 'TIKTOK',
+    label: 'Set microphone mute',
+    description: 'Force the LIVE Studio microphone to muted or unmuted.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [{ key: 'muted', label: 'Muted', type: 'boolean' }],
+  },
+  {
+    type: 'TIKTOK_TOGGLE_MIC',
+    category: 'TIKTOK',
+    label: 'Toggle microphone mute',
+    description: 'Mute the microphone if it is live, unmute it if it is muted.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [],
+  },
+  {
+    type: 'TIKTOK_SET_AUDIO_MUTED',
+    category: 'TIKTOK',
+    label: 'Set audio mute',
+    description: 'Force the LIVE Studio audio output to muted or unmuted.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [{ key: 'muted', label: 'Muted', type: 'boolean' }],
+  },
+  {
+    type: 'TIKTOK_TOGGLE_AUDIO',
+    category: 'TIKTOK',
+    label: 'Toggle audio mute',
+    description: 'Mute the audio output if it is on, unmute it if it is muted.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [],
+  },
+  {
+    type: 'TIKTOK_START_RECORDING',
+    category: 'TIKTOK',
+    label: 'Start recording',
+    description: 'Start recording in TikTok LIVE Studio.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [],
+  },
+  {
+    type: 'TIKTOK_STOP_RECORDING',
+    category: 'TIKTOK',
+    label: 'Stop recording',
+    description: 'Stop the LIVE Studio recording.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [],
+  },
+  {
+    type: 'TIKTOK_GET_STATUS',
+    category: 'TIKTOK',
+    label: 'Report status',
+    description: 'Show the current scene, microphone, recording and connection state.',
+    requiresObs: false,
+    provider: 'TIKTOK',
+    fields: [],
+  },
+  {
     type: 'NAV_NEXT_PAGE',
     category: 'NAVIGATION',
     label: 'Next page',
     description: 'Move the desktop deck to the next page (wraps around).',
     requiresObs: false,
+    provider: 'NONE',
     fields: [],
   },
   {
@@ -266,6 +413,7 @@ export const actionCatalog: readonly ActionCatalogEntry[] = [
     label: 'Previous page',
     description: 'Move the desktop deck to the previous page (wraps around).',
     requiresObs: false,
+    provider: 'NONE',
     fields: [],
   },
 ];

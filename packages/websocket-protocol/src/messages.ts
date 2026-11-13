@@ -149,6 +149,17 @@ export const obsStatusPayloadSchema = z
   })
   .strict();
 
+export const tiktokStatusPayloadSchema = z
+  .object({
+    connected: z.boolean(),
+    sceneName: z.string().nullable(),
+    micMuted: z.boolean(),
+    audioMuted: z.boolean(),
+    recording: z.boolean(),
+    streamStatus: z.number().int().min(0).max(2),
+  })
+  .strict();
+
 export const pongPayloadSchema = z.object({}).strict();
 
 export const errorPayloadSchema = z
@@ -197,6 +208,9 @@ export const serverMessageSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('action.failed'), ...envelope, payload: actionFailedPayloadSchema }).strict(),
   z.object({ type: z.literal('page.changed'), ...envelope, payload: pageChangedPayloadSchema }).strict(),
   z.object({ type: z.literal('obs.status'), ...envelope, payload: obsStatusPayloadSchema }).strict(),
+  z
+    .object({ type: z.literal('tiktok.status'), ...envelope, payload: tiktokStatusPayloadSchema })
+    .strict(),
   z.object({ type: z.literal('pong'), ...envelope, payload: pongPayloadSchema }).strict(),
   z.object({ type: z.literal('error'), ...envelope, payload: errorPayloadSchema }).strict(),
 ]);
@@ -209,6 +223,7 @@ export type RemoteDeckSnapshot = z.infer<typeof remoteDeckSnapshotSchema>;
 export type RemotePage = z.infer<typeof remotePageSchema>;
 export type RemoteButton = z.infer<typeof remoteButtonSchema>;
 export type ObsStatusPayload = z.infer<typeof obsStatusPayloadSchema>;
+export type TikTokStatusPayload = z.infer<typeof tiktokStatusPayloadSchema>;
 
 type ServerMessageOf<T extends ServerMessageType> = Extract<ServerMessage, { type: T }>;
 type ClientMessageOf<T extends ClientMessageType> = Extract<ClientMessage, { type: T }>;
