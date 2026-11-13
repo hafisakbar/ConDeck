@@ -8,6 +8,7 @@ export function App() {
     error,
     snapshot,
     obs,
+    tiktok,
     feedback,
     stored,
     pairToken,
@@ -26,6 +27,7 @@ export function App() {
       <RemoteScreen
         snapshot={snapshot}
         obs={obs}
+        tiktok={tiktok}
         state={state}
         feedback={feedback}
         onPress={press}

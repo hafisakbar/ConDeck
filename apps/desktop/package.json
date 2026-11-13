@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "StreamKey Desktop — host application (Electron + React).",
+  "description": "StreamKey Desktop \u2014 host application (Electron + React).",
   "author": "StreamKey",
   "main": "dist-electron/main/index.cjs",
   "scripts": {
@@ -35,7 +35,8 @@
     "three": "^0.187.0",
     "ws": "^8.22.1",
     "zod": "^4.6.7",
-    "zustand": "^5.0.16"
+    "zustand": "^5.0.16",
+    "@condeck/tiktok-live-studio-integration": "workspace:*"
   },
   "devDependencies": {
     "@electron/rebuild": "^4.2.1",

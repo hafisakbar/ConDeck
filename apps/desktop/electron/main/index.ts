@@ -12,6 +12,7 @@ import { createSafeStorageSecretStore } from './services/obs-secrets';
 import { createObsService, type ObsService } from './services/obs.service';
 import { createSoundService } from './services/sound.service';
 import { createRemoteService, type RemoteService } from './services/remote.service';
+import { createTikTokService, type TikTokService } from './services/tiktok.service';
 import { createMainWindow } from './window';
 
 // Kept stable so Windows treats this as the same installed application.
@@ -28,6 +29,7 @@ app.setPath('userData', join(app.getPath('appData'), 'ConDeck'));
 let logger: FileLogger | null = null;
 let obsService: ObsService | null = null;
 let remoteService: RemoteService | null = null;
+let tiktokService: TikTokService | null = null;
 
 function createLogger(): FileLogger {
   logger ??= new FileLogger(join(app.getPath('userData'), 'logs', 'condeck.log'));
@@ -91,6 +93,15 @@ function bootstrap(): void {
   });
   obsService = activeObsService;
 
+  const activeTikTokService = createTikTokService({
+    db: database.db,
+    onChange: (snapshot) => {
+      broadcast('tiktok:status', snapshot);
+      remoteService?.notifyTikTokStatus();
+    },
+  });
+  tiktokService = activeTikTokService;
+
   const soundService = createSoundService({
     db: database.db,
     soundsDir: join(app.getPath('userData'), 'sounds'),
@@ -101,6 +112,7 @@ function bootstrap(): void {
   const actionPorts = createActionPorts({
     sendNavigation: (request) => broadcast('navigation:request', request),
     obs: activeObsService.getActionPort(),
+    tiktok: activeTikTokService.getActionPort(),
     soundboard: {
       play: async (soundId, mode) => soundService.play(soundId, mode).name,
     },
@@ -112,6 +124,7 @@ function bootstrap(): void {
     db: database.db,
     executeAction: (buttonId) => actions.execute(buttonId),
     getObsSnapshot: () => activeObsService.getSnapshot(),
+    getTikTokSnapshot: () => activeTikTokService.getSnapshot(),
     mobileAssetsDir: resolveMobileAssetsDir(),
     logger: activeLogger,
     onStatusChange: (status) => broadcast('remote:status', status),
@@ -125,6 +138,7 @@ function bootstrap(): void {
     actions,
     sounds: soundService,
     obs: activeObsService,
+    tiktok: activeTikTokService,
     remote: activeRemoteService,
   });
 
@@ -142,6 +156,7 @@ function bootstrap(): void {
   activeLogger.info('Main window created');
 
   void activeRemoteService.initialize();
+  void activeTikTokService.initialize();
 }
 
 const hasSingleInstanceLock = app.requestSingleInstanceLock();
@@ -190,6 +205,7 @@ if (!hasSingleInstanceLock) {
     logger?.info('StreamKey shutting down');
     void remoteService?.dispose();
     void obsService?.dispose();
+    void tiktokService?.dispose();
     closeDatabase();
   });
 }

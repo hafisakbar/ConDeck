@@ -5,6 +5,7 @@ import {
   obsSnapshotSchema,
   remoteServerStatusSchema,
   soundPlayEventSchema,
+  tiktokSnapshotSchema,
   type ActionCatalogEntry,
   type ActionExecutionResult,
   type ActionRecord,
@@ -30,6 +31,9 @@ import {
   type RemoteServerStatus,
   type SaveObsSettingsInput,
   type SaveRemoteSettingsInput,
+  type SaveTikTokSettingsInput,
+  type TikTokSnapshot,
+  type TikTokTestResult,
   type Sound,
   type SoundAudio,
 } from '@condeck/shared';
@@ -104,6 +108,27 @@ const bridge: ConDeckBridge = {
   testObsConnection: (input: SaveObsSettingsInput) =>
     invoke<ObsTestResult>('obs:test-connection', input),
   listObsScenes: () => invoke<string[]>('obs:list-scenes'),
+
+  getTikTokSnapshot: () => invoke<TikTokSnapshot>('tiktok:get-snapshot'),
+  saveTikTokSettings: (input: SaveTikTokSettingsInput) =>
+    invoke<TikTokSnapshot>('tiktok:save-settings', input),
+  connectTikTok: () => invoke<TikTokSnapshot>('tiktok:connect'),
+  disconnectTikTok: () => invoke<TikTokSnapshot>('tiktok:disconnect'),
+  testTikTokConnection: () => invoke<TikTokTestResult>('tiktok:test-connection'),
+
+  onTikTokStatus(listener) {
+    const handler = (_event: IpcRendererEvent, payload: unknown): void => {
+      const parsed = tiktokSnapshotSchema.safeParse(payload);
+      if (parsed.success) {
+        listener(parsed.data);
+      }
+    };
+
+    ipcRenderer.on('tiktok:status', handler);
+    return () => {
+      ipcRenderer.removeListener('tiktok:status', handler);
+    };
+  },
 
   onObsStatus(listener) {
     const handler = (_event: IpcRendererEvent, payload: unknown): void => {

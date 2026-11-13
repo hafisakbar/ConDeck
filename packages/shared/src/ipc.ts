@@ -28,6 +28,11 @@ import {
   type DeckSummary,
 } from './deck';
 import {
+  saveTikTokSettingsInputSchema,
+  type TikTokSnapshot,
+  type TikTokTestResult,
+} from './tiktok';
+import {
   createProfileInputSchema,
   deleteProfileInputSchema,
   listActivityInputSchema,
@@ -67,6 +72,7 @@ import {
 export const ipcEvents = [
   'navigation:request',
   'obs:status',
+  'tiktok:status',
   'remote:status',
   'sound:play',
 ] as const;
@@ -107,6 +113,11 @@ export const ipcChannels = [
   'obs:disconnect',
   'obs:test-connection',
   'obs:list-scenes',
+  'tiktok:get-snapshot',
+  'tiktok:save-settings',
+  'tiktok:connect',
+  'tiktok:disconnect',
+  'tiktok:test-connection',
   'devices:list',
   'devices:revoke',
   'remote:get-status',
@@ -156,6 +167,11 @@ export const ipcInputSchemas = {
   'obs:disconnect': z.void(),
   'obs:test-connection': obsTestConnectionInputSchema,
   'obs:list-scenes': z.void(),
+  'tiktok:get-snapshot': z.void(),
+  'tiktok:save-settings': saveTikTokSettingsInputSchema,
+  'tiktok:connect': z.void(),
+  'tiktok:disconnect': z.void(),
+  'tiktok:test-connection': z.void(),
   'devices:list': z.void(),
   'devices:revoke': revokeDeviceInputSchema,
   'remote:get-status': z.void(),
@@ -294,6 +310,14 @@ export interface ConDeckBridge {
   listObsScenes(): Promise<IpcResult<string[]>>;
   /** Subscribes to live OBS status pushes; returns the unsubscribe function. */
   onObsStatus(listener: (snapshot: ObsSnapshot) => void): () => void;
+
+  getTikTokSnapshot(): Promise<IpcResult<TikTokSnapshot>>;
+  saveTikTokSettings(input: { isEnabled: boolean }): Promise<IpcResult<TikTokSnapshot>>;
+  connectTikTok(): Promise<IpcResult<TikTokSnapshot>>;
+  disconnectTikTok(): Promise<IpcResult<TikTokSnapshot>>;
+  testTikTokConnection(): Promise<IpcResult<TikTokTestResult>>;
+  /** Subscribes to live TikTok LIVE Studio status pushes. */
+  onTikTokStatus(listener: (snapshot: TikTokSnapshot) => void): () => void;
 
   listDevices(): Promise<IpcResult<Device[]>>;
   revokeDevice(input: { deviceId: string }): Promise<IpcResult<Device>>;

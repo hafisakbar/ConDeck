@@ -1,5 +1,9 @@
-import type { DeckDetail, ObsSnapshot } from '@condeck/shared';
-import type { ObsStatusPayload, RemoteDeckSnapshot } from '@condeck/websocket-protocol';
+import type { DeckDetail, ObsSnapshot, TikTokSnapshot } from '@condeck/shared';
+import type {
+  ObsStatusPayload,
+  RemoteDeckSnapshot,
+  TikTokStatusPayload,
+} from '@condeck/websocket-protocol';
 
 /**
  * Mobile only needs what it takes to draw a button (API_WEBSOCKET_CONTRACT.md
@@ -27,6 +31,19 @@ export function toRemoteDeckSnapshot(detail: DeckDetail): RemoteDeckSnapshot {
         hasAction: button.action !== null,
       })),
     })),
+  };
+}
+
+/** TikTok status as the remote understands it; no ports, versions or settings. */
+export function toTikTokStatusPayload(snapshot: TikTokSnapshot | null): TikTokStatusPayload {
+  const connected = snapshot?.state === 'CONNECTED';
+  return {
+    connected,
+    sceneName: connected ? snapshot.sceneName : null,
+    micMuted: connected ? snapshot.micMuted : false,
+    audioMuted: connected ? snapshot.audioMuted : false,
+    recording: connected ? snapshot.recording : false,
+    streamStatus: connected ? snapshot.streamStatus : 0,
   };
 }
 

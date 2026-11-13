@@ -67,6 +67,15 @@ beforeEach(() => {
     throw new AppError('OBS_DISCONNECTED', 'OBS is not connected.');
   });
   actionPorts = {
+    tiktok: {
+      isConnected: () => false,
+      getState: () => null,
+      switchScene: obsUnavailable,
+      setSourceVisible: obsUnavailable,
+      setMicMuted: obsUnavailable,
+      setAudioMuted: obsUnavailable,
+      setRecording: obsUnavailable,
+    },
     obs: {
       isConnected: () => false,
       switchScene: obsUnavailable,
@@ -177,6 +186,7 @@ beforeEach(() => {
     }),
     notifyDeckChanged: vi.fn(),
     notifyObsStatus: vi.fn(),
+    notifyTikTokStatus: vi.fn(),
     dispose: vi.fn(async () => undefined),
   };
 
@@ -193,6 +203,7 @@ beforeEach(() => {
       play: vi.fn(() => ({ id: 'x', name: 'Airhorn' })),
     } as unknown as import('../services/sound.service').SoundService,
     obs: obsService,
+    tiktok: null as unknown as never,
     remote: remoteService,
   });
 

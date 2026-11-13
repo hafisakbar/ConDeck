@@ -19,4 +19,5 @@ export type {
   ObsPort,
   SoundboardPort,
   SystemPort,
+  TikTokPort,
 } from './ports';

@@ -12,8 +12,32 @@ const context: ActionContext = {
   deckId: '9f8e7d6c-5b4a-4392-8170-6f5e4d3c2b1a',
 };
 
+const liveTikTokState = {
+  sceneName: 'Main',
+  scenes: [
+    {
+      name: 'Main',
+      sources: [{ label: 'Camera', value: 'cam-1' }],
+      visibleSources: [{ label: 'Camera', value: 'cam-1' }],
+    },
+  ],
+  micMuted: false,
+  audioMuted: false,
+  recording: false,
+  streamStatus: 0,
+};
+
 function createPorts(overrides: Partial<ActionPorts> = {}): ActionPorts {
   return {
+    tiktok: {
+      isConnected: () => true,
+      getState: () => liveTikTokState,
+      switchScene: vi.fn(async (sceneName: string) => ({ ...liveTikTokState, sceneName })),
+      setSourceVisible: vi.fn(async () => liveTikTokState),
+      setMicMuted: vi.fn(async (muted: boolean) => ({ ...liveTikTokState, micMuted: muted })),
+      setAudioMuted: vi.fn(async (muted: boolean) => ({ ...liveTikTokState, audioMuted: muted })),
+      setRecording: vi.fn(async (recording: boolean) => ({ ...liveTikTokState, recording })),
+    },
     obs: {
       isConnected: () => false,
       switchScene: vi.fn(async () => undefined),
@@ -219,5 +243,59 @@ describe('action definitions', () => {
     const types = actionDefinitions.map((definition) => definition.type as ActionType);
     expect(new Set(types).size).toBe(types.length);
     expect(types).toHaveLength(actionTypes.length);
+  });
+});
+
+describe('provider isolation', () => {
+  it('runs TikTok actions through the TikTok port only', async () => {
+    const ports = createPorts();
+    const engine = createActionEngine({ registry: actionRegistry, ports });
+
+    const result = await engine.execute(
+      request({ actionType: 'TIKTOK_TOGGLE_MIC', config: {} }),
+    );
+
+    expect(result.status).toBe('SUCCESS');
+    expect(result.message).toContain('muted');
+    expect(ports.tiktok.setMicMuted).toHaveBeenCalledWith(true);
+    expect(ports.obs.setInputMute).not.toHaveBeenCalled();
+  });
+
+  it('runs OBS actions without touching the TikTok port', async () => {
+    const ports = createPorts();
+    ports.obs.isConnected = () => true;
+    const engine = createActionEngine({ registry: actionRegistry, ports });
+
+    const result = await engine.execute(
+      request({ actionType: 'OBS_SWITCH_SCENE', config: { sceneName: 'Main' } }),
+    );
+
+    expect(result.status).toBe('SUCCESS');
+    expect(ports.obs.switchScene).toHaveBeenCalledWith('Main');
+    expect(ports.tiktok.switchScene).not.toHaveBeenCalled();
+  });
+
+  it('reports a disconnected TikTok provider without calling OBS', async () => {
+    const ports = createPorts();
+    ports.tiktok.isConnected = () => false;
+    ports.tiktok.getState = () => null;
+    const engine = createActionEngine({ registry: actionRegistry, ports });
+
+    const result = await engine.execute(request({ actionType: 'TIKTOK_GET_STATUS', config: {} }));
+
+    expect(result.status).toBe('FAILED');
+    expect(result.code).toBe('TIKTOK_DISCONNECTED');
+    expect(ports.obs.switchScene).not.toHaveBeenCalled();
+  });
+
+  it('verifies the state a TikTok toggle reports', async () => {
+    const ports = createPorts();
+    ports.tiktok.setRecording = vi.fn(async () => ({ ...liveTikTokState, recording: false }));
+    const engine = createActionEngine({ registry: actionRegistry, ports });
+
+    const result = await engine.execute(request({ actionType: 'TIKTOK_START_RECORDING', config: {} }));
+
+    expect(result.status).toBe('SUCCESS');
+    expect(result.message).toBe('Recording did not start.');
   });
 });

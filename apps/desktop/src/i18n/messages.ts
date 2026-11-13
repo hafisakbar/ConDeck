@@ -200,6 +200,40 @@ export const en = {
   integrations: {
     obsDescription:
       'Connect StreamKey to OBS through OBS WebSocket v5. Enable it in OBS under Tools → WebSocket Server Settings.',
+    tiktokTitle: 'TikTok LIVE Studio',
+    tiktokDescription:
+      'Control TikTok LIVE Studio through its local Socket.IO bridge. StreamKey only talks to the app on this computer — no TikTok password, cookies or account session is used, and Start/End LIVE stay manual.',
+    tiktokStatus: 'TikTok connection',
+    tiktokLoading: 'Loading TikTok LIVE Studio status…',
+    tiktokEnable: 'Enable TikTok LIVE Studio integration',
+    tiktokEnableDescription: 'Turn this off to keep the setting but block every TikTok action.',
+    tiktokFound: 'Application found',
+    tiktokNotFound: 'Application not found',
+    tiktokOpenHint:
+      'Open TikTok LIVE Studio on this computer, wait until the studio window is ready, then press Connect.',
+    tiktokVersion: 'Version',
+    tiktokPort: 'Local port',
+    tiktokScene: 'Active scene',
+    tiktokCompatibility:
+      'Verified with TikTok LIVE Studio 1.33.2. Other 1.x versions can work but are untested; versions below 1.30 or a different major version are refused.',
+    tiktokNoCredentials:
+      'No TikTok login is needed. This integration only controls the local application.',
+    tiktokTest: 'Test connection',
+    tiktokTestHint: 'Checks the application, its local port and the handshake without changing anything.',
+    tiktokState: {
+      DISCONNECTED: 'Disconnected',
+      CONNECTING: 'Connecting',
+      CONNECTED: 'Connected',
+      RECONNECTING: 'Reconnecting',
+      UNSUPPORTED_VERSION: 'Unsupported version',
+      ERROR: 'Error',
+    },
+    tiktokMicMuted: 'Microphone muted',
+    tiktokMicLive: 'Microphone live',
+    tiktokAudioMuted: 'Audio muted',
+    tiktokAudioOn: 'Audio on',
+    tiktokRecordingOn: 'Recording',
+    tiktokRecordingOff: 'Not recording',
     connection: 'Connection',
     loadingStatus: 'Loading OBS status…',
     unknown: 'Unknown',
@@ -327,6 +361,12 @@ export const en = {
     requiresObsDisconnected:
       'OBS is not connected. The action still saves, but pressing the button reports the connection error until you connect in Integrations.',
     chooseHint: 'Choose an action to make this button do something. Without an action it is only a label.',
+    provider: 'Platform',
+    providerHint: 'Pick the app this button controls, then choose one of its actions.',
+    providerDisconnected: '{provider} is not connected. Connect it in Integrations before using this action.',
+    tiktokScenesHint: 'Connect to TikTok LIVE Studio in Integrations to pick a scene from a list.',
+    tiktokScenePlaceholder: 'Choose a TikTok scene…',
+    tiktokSourcePlaceholder: 'Choose a source…',
     save: 'Save action',
     runTest: 'Run test',
     remove: 'Remove',
@@ -350,9 +390,13 @@ export const en = {
       url: 'URL',
       soundId: 'Sound',
       mode: 'When triggered again',
+      sourceId: 'Source',
+      sourceIdHelp: 'Sources are read from the chosen scene in LIVE Studio.',
+      visible: 'Visible',
     },
     categories: {
       OBS: 'OBS Studio',
+      TIKTOK: 'TikTok LIVE Studio',
       SYSTEM: 'System',
       SOUNDBOARD: 'Soundboard',
       NAVIGATION: 'Navigation',
@@ -370,6 +414,46 @@ export const en = {
       OBS_SET_MUTE: {
         label: 'Set audio mute',
         description: 'Force an audio input to muted or unmuted.',
+      },
+      TIKTOK_SWITCH_SCENE: {
+        label: 'Switch TikTok scene',
+        description: 'Switch TikTok LIVE Studio to an existing scene.',
+      },
+      TIKTOK_SET_SOURCE_VISIBILITY: {
+        label: 'Show or hide TikTok source',
+        description: 'Make a source visible or hidden in a LIVE Studio scene.',
+      },
+      TIKTOK_TOGGLE_SOURCE: {
+        label: 'Toggle TikTok source',
+        description: 'Show the source if it is hidden, hide it if it is visible.',
+      },
+      TIKTOK_SET_MIC_MUTED: {
+        label: 'Set TikTok microphone mute',
+        description: 'Force the LIVE Studio microphone to muted or unmuted.',
+      },
+      TIKTOK_TOGGLE_MIC: {
+        label: 'Toggle TikTok microphone',
+        description: 'Mute the microphone if it is live, unmute it if it is muted.',
+      },
+      TIKTOK_SET_AUDIO_MUTED: {
+        label: 'Set TikTok audio mute',
+        description: 'Force the LIVE Studio audio output to muted or unmuted.',
+      },
+      TIKTOK_TOGGLE_AUDIO: {
+        label: 'Toggle TikTok audio',
+        description: 'Mute the audio output if it is on, unmute it if it is muted.',
+      },
+      TIKTOK_START_RECORDING: {
+        label: 'Start TikTok recording',
+        description: 'Start recording in TikTok LIVE Studio.',
+      },
+      TIKTOK_STOP_RECORDING: {
+        label: 'Stop TikTok recording',
+        description: 'Stop the LIVE Studio recording.',
+      },
+      TIKTOK_GET_STATUS: {
+        label: 'Report TikTok status',
+        description: 'Report the current scene, microphone, audio and recording state.',
       },
       SYSTEM_OPEN_APP: {
         label: 'Open application',
@@ -635,6 +719,40 @@ export const id: Messages = {
   integrations: {
     obsDescription:
       'Hubungkan StreamKey ke OBS melalui OBS WebSocket v5. Aktifkan di OBS pada Tools → WebSocket Server Settings.',
+    tiktokTitle: 'TikTok LIVE Studio',
+    tiktokDescription:
+      'Kontrol TikTok LIVE Studio melalui jembatan Socket.IO lokalnya. StreamKey hanya berkomunikasi dengan aplikasi di komputer ini — tanpa kata sandi TikTok, cookie, atau sesi akun, dan Mulai/Akhiri LIVE tetap manual.',
+    tiktokStatus: 'Koneksi TikTok',
+    tiktokLoading: 'Memuat status TikTok LIVE Studio…',
+    tiktokEnable: 'Aktifkan integrasi TikTok LIVE Studio',
+    tiktokEnableDescription: 'Matikan untuk mempertahankan pengaturan tetapi memblokir semua aksi TikTok.',
+    tiktokFound: 'Aplikasi ditemukan',
+    tiktokNotFound: 'Aplikasi tidak ditemukan',
+    tiktokOpenHint:
+      'Buka TikTok LIVE Studio di komputer ini, tunggu sampai jendela studio siap, lalu tekan Hubungkan.',
+    tiktokVersion: 'Versi',
+    tiktokPort: 'Port lokal',
+    tiktokScene: 'Scene aktif',
+    tiktokCompatibility:
+      'Terverifikasi pada TikTok LIVE Studio 1.33.2. Versi 1.x lain mungkin berfungsi tetapi belum diuji; versi di bawah 1.30 atau major berbeda ditolak.',
+    tiktokNoCredentials:
+      'Tidak perlu login TikTok. Integrasi ini hanya mengontrol aplikasi lokal.',
+    tiktokTest: 'Uji koneksi',
+    tiktokTestHint: 'Memeriksa aplikasi, port lokal, dan handshake tanpa mengubah apa pun.',
+    tiktokState: {
+      DISCONNECTED: 'Terputus',
+      CONNECTING: 'Menghubungkan',
+      CONNECTED: 'Terhubung',
+      RECONNECTING: 'Menghubungkan ulang',
+      UNSUPPORTED_VERSION: 'Versi tidak didukung',
+      ERROR: 'Error',
+    },
+    tiktokMicMuted: 'Mikrofon bisu',
+    tiktokMicLive: 'Mikrofon aktif',
+    tiktokAudioMuted: 'Audio bisu',
+    tiktokAudioOn: 'Audio aktif',
+    tiktokRecordingOn: 'Merekam',
+    tiktokRecordingOff: 'Tidak merekam',
     connection: 'Koneksi',
     loadingStatus: 'Memuat status OBS…',
     unknown: 'Tidak diketahui',
@@ -762,6 +880,12 @@ export const id: Messages = {
     requiresObsDisconnected:
       'OBS tidak terhubung. Aksi tetap tersimpan, tetapi saat tombol ditekan akan muncul error koneksi sampai Anda menghubungkan OBS di Integrasi.',
     chooseHint: 'Pilih aksi agar tombol ini melakukan sesuatu. Tanpa aksi, tombol hanya berisi label.',
+    provider: 'Platform',
+    providerHint: 'Pilih aplikasi yang dikontrol tombol ini, lalu pilih aksinya.',
+    providerDisconnected: '{provider} tidak terhubung. Hubungkan di Integrasi sebelum memakai aksi ini.',
+    tiktokScenesHint: 'Hubungkan TikTok LIVE Studio di Integrasi untuk memilih scene dari daftar.',
+    tiktokScenePlaceholder: 'Pilih scene TikTok…',
+    tiktokSourcePlaceholder: 'Pilih sumber…',
     save: 'Simpan aksi',
     runTest: 'Uji jalankan',
     remove: 'Lepas',
@@ -785,9 +909,13 @@ export const id: Messages = {
       url: 'URL',
       soundId: 'Suara',
       mode: 'Saat dipicu ulang',
+      sourceId: 'Sumber',
+      sourceIdHelp: 'Sumber dibaca dari scene yang dipilih di LIVE Studio.',
+      visible: 'Terlihat',
     },
     categories: {
       OBS: 'OBS Studio',
+      TIKTOK: 'TikTok LIVE Studio',
       SYSTEM: 'Sistem',
       SOUNDBOARD: 'Soundboard',
       NAVIGATION: 'Navigasi',
@@ -805,6 +933,46 @@ export const id: Messages = {
       OBS_SET_MUTE: {
         label: 'Atur bisu audio',
         description: 'Paksa input audio menjadi bisu atau aktif.',
+      },
+      TIKTOK_SWITCH_SCENE: {
+        label: 'Ganti scene TikTok',
+        description: 'Pindah TikTok LIVE Studio ke scene yang sudah ada.',
+      },
+      TIKTOK_SET_SOURCE_VISIBILITY: {
+        label: 'Tampilkan / sembunyikan sumber TikTok',
+        description: 'Buat sumber terlihat atau tersembunyi di scene LIVE Studio.',
+      },
+      TIKTOK_TOGGLE_SOURCE: {
+        label: 'Alihkan sumber TikTok',
+        description: 'Tampilkan sumber jika tersembunyi, sembunyikan jika terlihat.',
+      },
+      TIKTOK_SET_MIC_MUTED: {
+        label: 'Atur bisu mikrofon TikTok',
+        description: 'Paksa mikrofon LIVE Studio menjadi bisu atau aktif.',
+      },
+      TIKTOK_TOGGLE_MIC: {
+        label: 'Alihkan mikrofon TikTok',
+        description: 'Bisukan mikrofon jika aktif, aktifkan jika sedang bisu.',
+      },
+      TIKTOK_SET_AUDIO_MUTED: {
+        label: 'Atur bisu audio TikTok',
+        description: 'Paksa keluaran audio LIVE Studio menjadi bisu atau aktif.',
+      },
+      TIKTOK_TOGGLE_AUDIO: {
+        label: 'Alihkan audio TikTok',
+        description: 'Bisukan audio jika aktif, aktifkan jika sedang bisu.',
+      },
+      TIKTOK_START_RECORDING: {
+        label: 'Mulai rekaman TikTok',
+        description: 'Mulai merekam di TikTok LIVE Studio.',
+      },
+      TIKTOK_STOP_RECORDING: {
+        label: 'Hentikan rekaman TikTok',
+        description: 'Hentikan rekaman LIVE Studio.',
+      },
+      TIKTOK_GET_STATUS: {
+        label: 'Laporkan status TikTok',
+        description: 'Laporkan scene, mikrofon, audio, dan status rekaman saat ini.',
       },
       SYSTEM_OPEN_APP: {
         label: 'Buka aplikasi',

@@ -6,6 +6,7 @@ import {
   type ClientMessage,
   type ObsStatusPayload,
   type RemoteDeckSnapshot,
+  type TikTokStatusPayload,
 } from '@condeck/websocket-protocol';
 import { buildWebSocketUrl } from './pairing-link';
 import type { StoredDevice } from './storage';
@@ -61,6 +62,7 @@ export interface RemoteClient {
   getError(): string | null;
   getSnapshot(): RemoteDeckSnapshot | null;
   getObs(): ObsStatusPayload | null;
+  getTikTok(): TikTokStatusPayload | null;
   getFeedback(): ActionFeedback | null;
   getDevice(): StoredDevice | null;
   subscribe(listener: () => void): () => void;
@@ -95,6 +97,7 @@ export function createRemoteClient(options: RemoteClientOptions = {}): RemoteCli
   let error: string | null = null;
   let snapshot: RemoteDeckSnapshot | null = null;
   let obs: ObsStatusPayload | null = null;
+  let tiktok: TikTokStatusPayload | null = null;
   let feedback: ActionFeedback | null = null;
 
   let host = '';
@@ -308,6 +311,12 @@ export function createRemoteClient(options: RemoteClientOptions = {}): RemoteCli
         return;
       }
 
+      case 'tiktok.status': {
+        tiktok = message.payload;
+        notify();
+        return;
+      }
+
       case 'obs.status': {
         obs = message.payload;
         notify();
@@ -459,6 +468,7 @@ export function createRemoteClient(options: RemoteClientOptions = {}): RemoteCli
       port = input.port;
       snapshot = null;
       obs = null;
+      tiktok = null;
       feedback = null;
 
       if (host.length === 0) {
@@ -510,6 +520,7 @@ export function createRemoteClient(options: RemoteClientOptions = {}): RemoteCli
     getError: () => error,
     getSnapshot: () => snapshot,
     getObs: () => obs,
+    getTikTok: () => tiktok,
     getFeedback: () => feedback,
     getDevice: () => device,
 

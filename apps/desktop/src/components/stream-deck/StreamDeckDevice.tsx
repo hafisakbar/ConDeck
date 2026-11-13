@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import * as THREE from 'three';
 import type { ExecutionState } from '../../stores/deck-store';
 import { isButtonActive } from '../../lib/button-status';
+import { useTikTokStore } from '../../stores/tiktok-store';
 import { StreamDeckButton3D } from './StreamDeckButton3D';
 import { slotPosition, type ButtonLayout } from './grid-layout';
 
@@ -62,6 +63,7 @@ export function StreamDeckDevice({
   onSelect,
   onActivate,
 }: StreamDeckDeviceProps) {
+  const tiktokSnapshot = useTikTokStore((state) => state.snapshot);
   const wordmark = useWordmarkTexture();
   const byPosition = new Map(buttons.map((button) => [button.position, button]));
   const slots = Array.from({ length: columns * rows }, (_, position) => position);
@@ -136,7 +138,7 @@ export function StreamDeckDevice({
             rows={rows}
             layout={layout}
             selected={button !== null && button.id === selectedButtonId}
-            active={button !== null && isButtonActive(button, obs)}
+            active={button !== null && isButtonActive(button, obs, tiktokSnapshot)}
             appearance={button ? (appearanceDraft[button.id] ?? button.appearance) : null}
             execution={button ? executions[button.id] : undefined}
             operate={operate}

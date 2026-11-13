@@ -7,6 +7,11 @@ import {
   Keyboard,
   Layers,
   Mic,
+  MicOff,
+  MonitorPlay,
+  RadioTower,
+  Video,
+  VideoOff,
   Radio,
   Square,
   Volume2,
@@ -29,6 +34,16 @@ const byType: Record<ActionType, LucideIcon> = {
   SOUNDBOARD_PLAY: Music4,
   NAV_NEXT_PAGE: Keyboard,
   NAV_PREV_PAGE: Clapperboard,
+  TIKTOK_SWITCH_SCENE: MonitorPlay,
+  TIKTOK_SET_SOURCE_VISIBILITY: Video,
+  TIKTOK_TOGGLE_SOURCE: VideoOff,
+  TIKTOK_SET_MIC_MUTED: MicOff,
+  TIKTOK_TOGGLE_MIC: Mic,
+  TIKTOK_SET_AUDIO_MUTED: Volume2,
+  TIKTOK_TOGGLE_AUDIO: Volume2,
+  TIKTOK_START_RECORDING: RadioTower,
+  TIKTOK_STOP_RECORDING: Square,
+  TIKTOK_GET_STATUS: Radio,
 };
 
 export function actionIcon(type: ActionType): LucideIcon {

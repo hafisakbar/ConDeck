@@ -18,6 +18,7 @@ import { StreamDeckPage } from './pages/StreamDeckPage';
 import { useAppStore } from './stores/app-store';
 import { useNavigationStore } from './stores/navigation-store';
 import { useObsStore } from './stores/obs-store';
+import { useTikTokStore } from './stores/tiktok-store';
 
 const viewComponents: Record<ViewId, ComponentType> = {
   dashboard: DashboardPage,
@@ -35,6 +36,7 @@ export default function App() {
   const error = useAppStore((state) => state.error);
   const refresh = useAppStore((state) => state.refresh);
   const initializeObs = useObsStore((state) => state.initialize);
+  const initializeTikTok = useTikTokStore((state) => state.initialize);
   const view = useNavigationStore((state) => state.view);
   const setView = useNavigationStore((state) => state.setView);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -45,7 +47,8 @@ export default function App() {
 
   useEffect(() => {
     void initializeObs();
-  }, [initializeObs]);
+    void initializeTikTok();
+  }, [initializeObs, initializeTikTok]);
 
   if (status === 'loading') {
     return <BootScreen />;

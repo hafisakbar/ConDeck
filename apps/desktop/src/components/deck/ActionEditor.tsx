@@ -4,6 +4,8 @@ import {
   type ActionCatalogEntry,
   type ActionType,
   type DeckButtonWithAction,
+  type TikTokScene,
+  type TikTokSource,
 } from '@condeck/shared';
 import { CheckCircle2, Loader2, Play, Save, Search, TriangleAlert, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -15,6 +17,7 @@ import { actionIcon } from '../../lib/action-icons';
 import { ActionPickerDialog } from './ActionPickerDialog';
 import type { ExecutionState } from '../../stores/deck-store';
 import { useObsStore } from '../../stores/obs-store';
+import { useTikTokStore } from '../../stores/tiktok-store';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
@@ -22,6 +25,8 @@ import { Toggle } from '../ui/Toggle';
 
 /** Stable empty array so the store selector never returns a new reference. */
 const NO_SCENES: string[] = [];
+const NO_TIKTOK_SCENES: TikTokScene[] = [];
+const NO_TIKTOK_SOURCES: TikTokSource[] = [];
 
 export interface ActionEditorProps {
   button: DeckButtonWithAction;
@@ -53,6 +58,11 @@ export function ActionEditor({
   const obsSnapshot = useObsStore((state) => state.snapshot);
   const obsState = obsSnapshot?.state ?? null;
   const obsScenes = obsSnapshot?.scenes ?? NO_SCENES;
+  const tiktokSnapshot = useTikTokStore((state) => state.snapshot);
+  const tiktokScenes = tiktokSnapshot?.scenes ?? NO_TIKTOK_SCENES;
+  const tiktokSceneName = typeof config.sceneName === 'string' ? config.sceneName : '';
+  const tiktokSources =
+    tiktokScenes.find((scene) => scene.name === tiktokSceneName)?.sources ?? NO_TIKTOK_SOURCES;
 
   useEffect(() => {
     setActionType(button.action?.actionType ?? '');
@@ -137,6 +147,8 @@ export function ActionEditor({
         open={pickerOpen}
         catalog={catalog}
         selected={actionType}
+        obsConnected={obsState === 'CONNECTED'}
+        tiktokConnected={tiktokSnapshot?.state === 'CONNECTED'}
         onSelect={handleTypeChange}
         onClose={() => setPickerOpen(false)}
       />
@@ -192,7 +204,55 @@ export function ActionEditor({
           ) : null}
 
           {entry.fields.map((field) =>
-            entry.type === 'OBS_SWITCH_SCENE' && field.key === 'sceneName' ? (
+            (entry.type === 'TIKTOK_SWITCH_SCENE' ||
+              entry.type === 'TIKTOK_SET_SOURCE_VISIBILITY' ||
+              entry.type === 'TIKTOK_TOGGLE_SOURCE') &&
+            field.key === 'sceneName' ? (
+              <Select
+                key={field.key}
+                label={t('action.fields.sceneName')}
+                hint={
+                  tiktokScenes.length > 0
+                    ? t('action.fields.sceneName')
+                    : t('action.tiktokScenesHint')
+                }
+                value={tiktokSceneName}
+                onChange={(event) => handleFieldChange('sceneName', event.target.value)}
+              >
+                <option value="">{t('action.tiktokScenePlaceholder')}</option>
+                {tiktokScenes.map((scene) => (
+                  <option key={scene.name} value={scene.name}>
+                    {scene.name}
+                  </option>
+                ))}
+                {tiktokSceneName.length > 0 &&
+                !tiktokScenes.some((scene) => scene.name === tiktokSceneName) ? (
+                  <option value={tiktokSceneName}>{tiktokSceneName}</option>
+                ) : null}
+              </Select>
+            ) : (entry.type === 'TIKTOK_SET_SOURCE_VISIBILITY' ||
+                entry.type === 'TIKTOK_TOGGLE_SOURCE') &&
+              field.key === 'sourceId' ? (
+              <Select
+                key={field.key}
+                label={t('action.fields.sourceId')}
+                hint={t('action.fields.sourceIdHelp')}
+                value={typeof config[field.key] === 'string' ? (config[field.key] as string) : ''}
+                onChange={(event) => handleFieldChange(field.key, event.target.value)}
+              >
+                <option value="">{t('action.tiktokSourcePlaceholder')}</option>
+                {tiktokSources.map((source) => (
+                  <option key={source.value} value={source.value}>
+                    {source.label}
+                  </option>
+                ))}
+                {typeof config[field.key] === 'string' &&
+                (config[field.key] as string).length > 0 &&
+                !tiktokSources.some((source) => source.value === config[field.key]) ? (
+                  <option value={config[field.key] as string}>{config[field.key] as string}</option>
+                ) : null}
+              </Select>
+            ) : entry.type === 'OBS_SWITCH_SCENE' && field.key === 'sceneName' ? (
               <Select
                 key={field.key}
                 label={t(`action.fields.${field.key}` as MessageKey)}
@@ -235,6 +295,16 @@ export function ActionEditor({
               />
             ),
           )}
+
+          {entry.provider === 'TIKTOK' ? (
+            <p className="rounded-control border border-border-subtle bg-surface-raised px-2.5 py-2 text-[11px] leading-relaxed text-content-subtle">
+              {tiktokSnapshot?.state === 'CONNECTED'
+                ? t('action.requiresObsConnected').replace('OBS', 'TikTok LIVE Studio')
+                : t('action.providerDisconnected', {
+                    provider: t('action.categories.TIKTOK'),
+                  })}
+            </p>
+          ) : null}
 
           {entry.requiresObs ? (
             <p className="rounded-control border border-border-subtle bg-surface-raised px-2.5 py-2 text-[11px] leading-relaxed text-content-subtle">

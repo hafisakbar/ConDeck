@@ -1,9 +1,5 @@
-import {
-  actionCategories,
-  type ActionCatalogEntry,
-  type ActionType,
-} from '@condeck/shared';
-import { Search } from 'lucide-react';
+import type { ActionCatalogEntry, ActionProvider, ActionType } from '@condeck/shared';
+import { Search, TriangleAlert } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useT } from '../../i18n';
 import { actionIcon } from '../../lib/action-icons';
@@ -15,35 +11,43 @@ export interface ActionPickerDialogProps {
   open: boolean;
   catalog: ActionCatalogEntry[];
   selected: ActionType | '';
+  obsConnected: boolean;
+  tiktokConnected: boolean;
   onSelect: (type: ActionType | '') => void;
   onClose: () => void;
 }
 
+const providers: ActionProvider[] = ['OBS', 'TIKTOK', 'NONE'];
+
 /**
- * Categorised, searchable action browser. It replaces the old flat <select> and
- * only lists actions the catalog really exposes; choosing one closes the sheet
- * and leaves configuration to the editor below.
+ * Categorised, searchable action browser with an explicit provider step, so OBS
+ * and TikTok LIVE Studio actions never mix. It only lists actions the catalog
+ * really exposes; choosing one closes the sheet and leaves configuration to the
+ * editor below.
  */
 export function ActionPickerDialog({
   open,
   catalog,
   selected,
+  obsConnected,
+  tiktokConnected,
   onSelect,
   onClose,
 }: ActionPickerDialogProps) {
   const t = useT();
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<string>('ALL');
+  const selectedProvider = catalog.find((entry) => entry.type === selected)?.provider;
+  const [provider, setProvider] = useState<ActionProvider | 'ALL'>(selectedProvider ?? 'ALL');
 
-  const categories = useMemo(
-    () => actionCategories.filter((entry) => catalog.some((item) => item.category === entry)),
+  const available = useMemo(
+    () => new Set(catalog.map((entry) => entry.provider)),
     [catalog],
   );
 
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return catalog.filter((entry) => {
-      if (category !== 'ALL' && entry.category !== category) {
+      if (provider !== 'ALL' && entry.provider !== provider) {
         return false;
       }
       if (!needle) {
@@ -53,22 +57,66 @@ export function ActionPickerDialog({
       const description = t(`action.types.${entry.type}.description`).toLowerCase();
       return label.includes(needle) || description.includes(needle) || entry.type.toLowerCase().includes(needle);
     });
-  }, [catalog, category, query, t]);
+  }, [catalog, provider, query, t]);
 
   function choose(type: ActionType | ''): void {
     onSelect(type);
     onClose();
   }
 
+  function providerLabel(entry: ActionProvider | 'ALL'): string {
+    if (entry === 'ALL') {
+      return t('action.all');
+    }
+    if (entry === 'NONE') {
+      return t('action.categories.SYSTEM');
+    }
+    return t(`action.categories.${entry}`);
+  }
+
+  const disconnected =
+    (provider === 'OBS' && !obsConnected) || (provider === 'TIKTOK' && !tiktokConnected);
+
   return (
     <Modal
       open={open}
       title={selected ? t('action.change') : t('action.choose')}
-      description={t('action.chooseHint')}
+      description={t('action.providerHint')}
       onClose={onClose}
       size="lg"
     >
       <div className="space-y-3">
+        <div>
+          <p className="mb-1 text-[11px] font-medium text-content-subtle">{t('action.provider')}</p>
+          <div className="flex flex-wrap gap-1">
+            {(['ALL', ...providers.filter((entry) => available.has(entry))] as Array<
+              ActionProvider | 'ALL'
+            >).map((entry) => (
+              <button
+                key={entry}
+                type="button"
+                onClick={() => setProvider(entry)}
+                aria-pressed={provider === entry}
+                className={cn(
+                  'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors',
+                  provider === entry
+                    ? 'bg-accent-soft text-accent'
+                    : 'text-content-muted hover:bg-surface-hover hover:text-content',
+                )}
+              >
+                {providerLabel(entry)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {disconnected ? (
+          <p className="flex items-start gap-2 rounded-control border border-warning/40 bg-warning-soft px-2.5 py-2 text-[11px] leading-relaxed text-warning">
+            <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+            <span>{t('action.providerDisconnected', { provider: providerLabel(provider) })}</span>
+          </p>
+        ) : null}
+
         <Input
           label={t('common.search')}
           placeholder={t('action.search')}
@@ -76,38 +124,6 @@ export function ActionPickerDialog({
           autoFocus
           onChange={(event) => setQuery(event.target.value)}
         />
-
-        <div className="flex flex-wrap gap-1">
-          <button
-            type="button"
-            onClick={() => setCategory('ALL')}
-            aria-pressed={category === 'ALL'}
-            className={cn(
-              'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors',
-              category === 'ALL'
-                ? 'bg-accent-soft text-accent'
-                : 'text-content-muted hover:bg-surface-hover hover:text-content',
-            )}
-          >
-            {t('action.all')}
-          </button>
-          {categories.map((entry) => (
-            <button
-              key={entry}
-              type="button"
-              onClick={() => setCategory(entry)}
-              aria-pressed={category === entry}
-              className={cn(
-                'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors',
-                category === entry
-                  ? 'bg-accent-soft text-accent'
-                  : 'text-content-muted hover:bg-surface-hover hover:text-content',
-              )}
-            >
-              {t(`action.categories.${entry}`)}
-            </button>
-          ))}
-        </div>
 
         <div className="max-h-[42vh] space-y-1 overflow-y-auto pr-1">
           <button
@@ -153,7 +169,7 @@ export function ActionPickerDialog({
                       {t(`action.types.${entry.type}.label`)}
                     </span>
                     <span className="rounded bg-surface-raised px-1 py-0.5 text-[9px] tracking-wide text-content-subtle uppercase">
-                      {t(`action.categories.${entry.category}`)}
+                      {providerLabel(entry.provider)}
                     </span>
                   </span>
                   <span className="mt-0.5 block text-[11px] leading-relaxed text-content-muted">

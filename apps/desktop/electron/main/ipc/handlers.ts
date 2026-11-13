@@ -80,6 +80,9 @@ import {
   type RevokeDeviceInput,
   type SaveObsSettingsInput,
   type SaveRemoteSettingsInput,
+  type SaveTikTokSettingsInput,
+  type TikTokSnapshot,
+  type TikTokTestResult,
   type SetActionInput,
   type Sound,
   type SoundAudio,
@@ -97,6 +100,7 @@ import { buildDashboardSummary } from '../services/dashboard.service';
 import type { ObsService } from '../services/obs.service';
 import type { RemoteService } from '../services/remote.service';
 import type { SoundService } from '../services/sound.service';
+import type { TikTokService } from '../services/tiktok.service';
 
 export interface IpcContext {
   logger: FileLogger;
@@ -105,6 +109,7 @@ export interface IpcContext {
   actions: ActionService;
   sounds: SoundService;
   obs: ObsService;
+  tiktok: TikTokService;
   remote: RemoteService;
 }
 
@@ -119,6 +124,9 @@ const ERROR_CODE_MAP: Record<ErrorCode, IpcErrorCode> = {
   OBS_DISCONNECTED: 'NOT_AVAILABLE',
   OBS_CONNECTION_FAILED: 'NOT_AVAILABLE',
   OBS_REQUEST_FAILED: 'ACTION_FAILED',
+  TIKTOK_DISCONNECTED: 'NOT_AVAILABLE',
+  TIKTOK_NOT_FOUND: 'NOT_AVAILABLE',
+  TIKTOK_UNSUPPORTED_VERSION: 'NOT_AVAILABLE',
   ACTION_FAILED: 'ACTION_FAILED',
   ACTION_TIMEOUT: 'ACTION_TIMEOUT',
   ACTION_BUSY: 'ACTION_BUSY',
@@ -137,6 +145,7 @@ export function registerIpcHandlers({
   actions,
   sounds,
   obs,
+  tiktok,
   remote,
 }: IpcContext): void {
   const handle = <TInput, TOutput>(
@@ -482,6 +491,53 @@ export function registerIpcHandlers({
   );
 
   handle<void, string[]>('obs:list-scenes', () => obs.listScenes());
+
+  // ------------------------------------------------------------- TikTok LIVE
+
+  handle<void, TikTokSnapshot>('tiktok:get-snapshot', () => tiktok.getSnapshot());
+
+  handle<SaveTikTokSettingsInput, TikTokSnapshot>('tiktok:save-settings', (input) => {
+    const snapshot = tiktok.saveSettings(input);
+    recordActivity(db, {
+      eventType: 'TIKTOK_SETTINGS_SAVED',
+      description: input.isEnabled
+        ? 'TikTok LIVE Studio integration enabled'
+        : 'TikTok LIVE Studio integration disabled',
+      metadata: { isEnabled: input.isEnabled },
+    });
+    return snapshot;
+  });
+
+  handle<void, TikTokSnapshot>('tiktok:connect', async () => {
+    try {
+      const snapshot = await tiktok.connect();
+      recordActivity(db, {
+        eventType: 'TIKTOK_CONNECTED',
+        description: `Connected to TikTok LIVE Studio${snapshot.version ? ` ${snapshot.version}` : ''}`,
+        metadata: { port: snapshot.port, sceneName: snapshot.sceneName },
+      });
+      logger.info('TikTok LIVE Studio connected', { port: snapshot.port });
+      return snapshot;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error.';
+      recordActivity(db, {
+        eventType: 'TIKTOK_CONNECTION_FAILED',
+        description: `Could not connect to TikTok LIVE Studio: ${message}`,
+      });
+      throw error;
+    }
+  });
+
+  handle<void, TikTokSnapshot>('tiktok:disconnect', async () => {
+    const snapshot = await tiktok.disconnect();
+    recordActivity(db, {
+      eventType: 'TIKTOK_DISCONNECTED',
+      description: 'Disconnected from TikTok LIVE Studio',
+    });
+    return snapshot;
+  });
+
+  handle<void, TikTokTestResult>('tiktok:test-connection', () => tiktok.testConnection());
 
   // ------------------------------------------------------- devices, activity
 

@@ -18,6 +18,7 @@ import {
   type RemotePairing,
   type RemoteServerStatus,
   type SaveRemoteSettingsInput,
+  type TikTokSnapshot,
 } from '@condeck/shared';
 import { createRemoteServer, type RemoteActivityEvent, type RemoteServerLogger } from './remote-server.service';
 
@@ -27,6 +28,7 @@ export interface RemoteServiceOptions {
   db: ConDeckDb;
   executeAction: (buttonId: string) => Promise<ActionExecutionResult>;
   getObsSnapshot: () => ObsSnapshot | null;
+  getTikTokSnapshot?: () => TikTokSnapshot | null;
   /** Directory with the built mobile app, or null when it is not available. */
   mobileAssetsDir?: string | null;
   onStatusChange?: (status: RemoteServerStatus) => void;
@@ -46,6 +48,7 @@ export interface RemoteService {
   revokeDevice(deviceId: string): Device;
   notifyDeckChanged(): void;
   notifyObsStatus(): void;
+  notifyTikTokStatus(): void;
   dispose(): Promise<void>;
 }
 
@@ -65,6 +68,7 @@ export function createRemoteService({
   db,
   executeAction,
   getObsSnapshot,
+  getTikTokSnapshot,
   mobileAssetsDir = null,
   onStatusChange,
   logger,
@@ -95,6 +99,7 @@ export function createRemoteService({
       executeAction,
       getActiveDeck: resolveActiveDeck,
       getObsSnapshot,
+      ...(getTikTokSnapshot ? { getTikTokSnapshot } : {}),
       mobileAssetsDir,
       port: portOverride ?? settings.port,
       ...(logger ? { logger } : {}),
@@ -223,6 +228,10 @@ export function createRemoteService({
 
     notifyObsStatus() {
       server.broadcastObsStatus();
+    },
+
+    notifyTikTokStatus() {
+      server.broadcastTikTokStatus();
     },
 
     dispose() {
